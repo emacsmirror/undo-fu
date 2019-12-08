@@ -65,11 +65,49 @@ Argument LIST compatible list `buffer-undo-list'."
   list)
 
 
-(defun undo-fu-only-redo ()
-  "Redo an action until the initial undo action.
+(defun undo-fu--count-step-to-other (list list-to-find count-limit)
+  "Get the next undo step in the list.
+
+Argument LIST compatible list `buffer-undo-list'.
+Argument LIST-TO-FIND the list to search for.
+Argument COUNT-LIMIT don't count past his value.
+
+Returns the number of steps to reach this list."
+  (let ((count 0))
+    (while (and list (not (eq list list-to-find)) (< count count-limit))
+      (setq list (undo-fu--next-step list))
+      (setq count (1+ count)))
+    count))
+
+(defun undo-fu--count-redo-available (list-to-find count-limit)
+  "Count the number of redo steps until a previously stored undo step.
+
+Argument LIST-TO-FIND count the steps up until this undo step.
+Argument COUNT-LIMIT don't count past his value.
+
+Returns the number of steps to reach this list."
+  (undo-fu--count-step-to-other
+    (if (or (eq pending-undo-list t) (member last-command '(undo undo-fu-only-undo)))
+      (undo-fu--next-step buffer-undo-list)
+      pending-undo-list)
+    list-to-find count-limit))
+
+(defun undo-fu-only-redo-all ()
+  "Redo all actions until the initial undo step.
 
 wraps the `undo' function."
-  (interactive)
+  (interactive "*")
+  (unless undo-fu--checkpoint
+    (user-error "Redo end-point not found!"))
+  (undo-fu-only-redo (undo-fu--count-redo-available undo-fu--checkpoint most-positive-fixnum)))
+
+(defun undo-fu-only-redo (&optional arg)
+  "Redo an action until the initial undo action.
+
+wraps the `undo' function.
+
+Optional argument ARG The number of steps to redo."
+  (interactive "*p")
 
   (let*
     ( ;; Assign for convenience.
@@ -114,10 +152,16 @@ wraps the `undo' function."
             (t
               ;; No change.
               last-command)))
+        (steps
+          (if (numberp arg)
+            (if (and undo-fu--respect undo-fu--checkpoint)
+              (undo-fu--count-redo-available undo-fu--checkpoint arg)
+              arg)
+            1))
         (success
           (condition-case err
             (progn
-              (undo)
+              (undo steps)
               t)
             (user-error (message "%s" (error-message-string err))))))
       (when success
@@ -128,11 +172,13 @@ wraps the `undo' function."
   (setq this-command 'undo-fu-only-redo))
 
 
-(defun undo-fu-only-undo ()
+(defun undo-fu-only-undo (&optional arg)
   "Undo the last action.
 
-wraps the `undo-only' function."
-  (interactive)
+wraps the `undo-only' function.
+
+Optional argument ARG the number of steps to undo."
+  (interactive "*p")
 
   (let*
     ( ;; Assign for convenience.
@@ -161,10 +207,11 @@ wraps the `undo-only' function."
             (t
               ;; No change.
               last-command)))
+        (steps (or arg 1))
         (success
           (condition-case err
             (progn
-              (undo-only)
+              (undo-only steps)
               t)
             (user-error (message "%s" (error-message-string err)))
             (error (message "%s" (error-message-string err))))))

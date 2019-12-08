@@ -33,10 +33,11 @@ The default emacs undo has two limitations this package aims to resolve,
 Usage
 =====
 
-This package exposes two functions:
+This package exposes the following functions:
 
 - ``undo-fu-only-undo``
 - ``undo-fu-only-redo``
+- ``undo-fu-only-redo-all``
 
 You will need to make these to keys yourself.
 
