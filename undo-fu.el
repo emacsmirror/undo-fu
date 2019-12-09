@@ -29,7 +29,7 @@
 ;; and stops redoing once the initial undo action is reached.
 ;;
 ;; If you want to cross the initial undo step to access
-;; the full history, pressing C-g (keyboard-quit)
+;; the full history, running (keyboard-quit) typically C-g.
 ;; lets you continue redoing for functionality not typically
 ;; accessible with regular undo/redo.
 ;;
@@ -52,6 +52,9 @@
 ;; Apply undo/redo constraints to stop redo from undoing or
 ;; passing the initial undo checkpoint.
 (defvar-local undo-fu--respect t)
+
+
+;; Internal functions.
 
 
 (defun undo-fu--next-step (list)
@@ -79,6 +82,7 @@ Returns the number of steps to reach this list."
       (setq count (1+ count)))
     count))
 
+
 (defun undo-fu--count-redo-available (list-to-find count-limit)
   "Count the number of redo steps until a previously stored undo step.
 
@@ -92,6 +96,9 @@ Returns the number of steps to reach this list."
       pending-undo-list)
     list-to-find count-limit))
 
+
+;; Public functions.
+
 (defun undo-fu-only-redo-all ()
   "Redo all actions until the initial undo step.
 
@@ -100,6 +107,7 @@ wraps the `undo' function."
   (unless undo-fu--checkpoint
     (user-error "Redo end-point not found!"))
   (undo-fu-only-redo (undo-fu--count-redo-available undo-fu--checkpoint most-positive-fixnum)))
+
 
 (defun undo-fu-only-redo (&optional arg)
   "Redo an action until the initial undo action.
@@ -121,7 +129,7 @@ Optional argument ARG The number of steps to redo."
       (unless was-undo-or-redo
         (setq undo-fu--respect t)))
 
-    ;; Allow crossing the boundary, if we press G-g
+    ;; Allow crossing the boundary, if we press keyboard-quit.
     ;; to allow explicitly over-stepping the boundary, in cases where it's needed.
     (when undo-fu--respect
       (when (string-equal last-command 'keyboard-quit)
@@ -134,17 +142,21 @@ Optional argument ARG The number of steps to redo."
         ;; Ensure the next steps is a redo action.
         (let ((list (undo-fu--next-step buffer-undo-list)))
           (and list (gethash list undo-equiv-table)))
-        (user-error "Redo step not found (C-g to ignore)")))
+        (user-error
+          "Redo step not found (%s to ignore)"
+          (substitute-command-keys "\\[keyboard-quit]"))))
 
     (when undo-fu--checkpoint-is-blocking
-      (user-error "Redo end-point hit (C-g to step over it)"))
+      (user-error
+        "Redo end-point hit (%s to step over it)"
+        (substitute-command-keys "\\[keyboard-quit]")))
 
     (let*
       (
         (last-command
           (cond
             (was-undo
-              ;; Break undo chain, avoid having to press C-g.
+              ;; Break undo chain, avoid having to press keyboard-quit.
               'ignore)
             (was-redo
               ;; Checked by the undo function.
