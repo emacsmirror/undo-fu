@@ -39,9 +39,20 @@ This package exposes the following functions:
 - ``undo-fu-only-redo``
 - ``undo-fu-only-redo-all``
 
+
+Key Bindings
+------------
+
 You will need to make these to keys yourself.
 
-Key binding example:
+Key binding example for evil-mode:
+
+.. code-block:: elisp
+
+   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
+   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo)
+
+Key binding example for typical ``Ctrl-Z``, ``Ctrl-Shift-Z`` keys:
 
 .. code-block:: elisp
 
@@ -49,10 +60,12 @@ Key binding example:
    (global-set-key (kbd "C-z")   'undo-fu-only-undo)
    (global-set-key (kbd "C-S-z") 'undo-fu-only-redo)
 
-Assuming you have these key bindings set, you can do the following.
 
-- Holding ``Ctrl-Z`` undoes all available actions.
-- Holding ``Ctrl-Shift-Z`` redoes all actions until the first undo performed after an edit.
+Details
+-------
+
+- Holding the undo-key undoes all available actions.
+- Holding the redo-key redoes all actions until the first undo performed after an edit.
 - Redoing beyond this point is prevented, as you might expect since this is how undo/redo normally works,
   this means you can conveniently hold the redo key to reach the newest state of the document.
 
