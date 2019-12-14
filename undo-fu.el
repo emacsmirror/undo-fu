@@ -129,8 +129,8 @@ Optional argument ARG The number of steps to redo."
       (unless was-undo-or-redo
         (setq undo-fu--respect t)))
 
-    ;; Allow crossing the boundary, if we press keyboard-quit.
-    ;; to allow explicitly over-stepping the boundary, in cases where it's needed.
+    ;; Allow crossing the boundary, if we press [keyboard-quit].
+    ;; This allows explicitly over-stepping the boundary, in cases where it's needed.
     (when undo-fu--respect
       (when (string-equal last-command 'keyboard-quit)
         (setq undo-fu--respect nil)
@@ -156,7 +156,7 @@ Optional argument ARG The number of steps to redo."
         (last-command
           (cond
             (was-undo
-              ;; Break undo chain, avoid having to press keyboard-quit.
+              ;; Break undo chain, avoid having to press [keyboard-quit].
               'ignore)
             (was-redo
               ;; Checked by the undo function.
@@ -175,7 +175,7 @@ Optional argument ARG The number of steps to redo."
             (progn
               (undo steps)
               t)
-            (user-error (message "%s" (error-message-string err))))))
+            (error (message "%s" (error-message-string err))))))
       (when success
         (when undo-fu--respect
           (when (eq (gethash buffer-undo-list undo-equiv-table) undo-fu--checkpoint)
@@ -225,7 +225,6 @@ Optional argument ARG the number of steps to undo."
             (progn
               (undo-only steps)
               t)
-            (user-error (message "%s" (error-message-string err)))
             (error (message "%s" (error-message-string err))))))
       (when success
         (when undo-fu--respect
