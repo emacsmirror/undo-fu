@@ -69,13 +69,13 @@ Argument LIST compatible list `buffer-undo-list'."
 
 
 (defun undo-fu--count-step-to-other (list list-to-find count-limit)
-  "Get the next undo step in the list.
+  "Count the number of steps to an item in the undo list.
 
 Argument LIST compatible list `buffer-undo-list'.
 Argument LIST-TO-FIND the list to search for.
-Argument COUNT-LIMIT don't count past his value.
+Argument COUNT-LIMIT don't count past this value.
 
-Returns the number of steps to reach this list."
+Returns the number of steps to reach this list or COUNT-LIMIT."
   (let ((count 0))
     (while (and list (not (eq list list-to-find)) (< count count-limit))
       (setq list (undo-fu--next-step list))
@@ -84,12 +84,12 @@ Returns the number of steps to reach this list."
 
 
 (defun undo-fu--count-redo-available (list-to-find count-limit)
-  "Count the number of redo steps until a previously stored undo step.
+  "Count the number of redo steps until a previously stored step.
 
 Argument LIST-TO-FIND count the steps up until this undo step.
 Argument COUNT-LIMIT don't count past his value.
 
-Returns the number of steps to reach this list."
+Returns the number of steps to reach this list or COUNT-LIMIT."
   (undo-fu--count-step-to-other
     (if (or (eq pending-undo-list t) (member last-command '(undo undo-fu-only-undo)))
       (undo-fu--next-step buffer-undo-list)
