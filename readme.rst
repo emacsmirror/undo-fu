@@ -73,3 +73,22 @@ Details
   you're prompted to press ``Ctrl-G`` (``keyboard-quit``),
   then you can continue to redo using emacs default behavior
   until a new chain of undo/redo events is started.
+
+
+Installation
+============
+
+The package is available in melpa as ``undo-fu``.
+
+.. code-block:: elisp
+
+   (use-package undo-fu)
+
+Combined with key bindings, for evil-mode:
+
+.. code-block:: elisp
+
+   (use-package undo-fu
+     :config
+     (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
+     (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
