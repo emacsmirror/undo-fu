@@ -75,6 +75,12 @@ Details
   until a new chain of undo/redo events is started.
 
 
+Limitations
+===========
+
+The feature ``undo-in-region`` is currently unsupported.
+
+
 Installation
 ============
 

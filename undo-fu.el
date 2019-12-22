@@ -173,6 +173,9 @@ Optional argument ARG The number of steps to redo."
         (success
           (condition-case err
             (progn
+              ;; 'undo-in-region' unsupported.
+              (when transient-mark-mode
+                (deactivate-mark))
               (undo steps)
               t)
             (error (message "%s" (error-message-string err))))))
@@ -223,6 +226,9 @@ Optional argument ARG the number of steps to undo."
         (success
           (condition-case err
             (progn
+              ;; 'undo-in-region' unsupported.
+              (when transient-mark-mode
+                (deactivate-mark))
               (undo-only steps)
               t)
             (error (message "%s" (error-message-string err))))))
