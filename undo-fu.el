@@ -210,6 +210,15 @@ Optional argument ARG the number of steps to undo."
     (when (or undo-fu--checkpoint-is-blocking (not was-undo-or-redo))
       (setq undo-fu--checkpoint (cdr buffer-undo-list)))
 
+    ;; Allow crossing the boundary, if we press [keyboard-quit].
+    ;; This allows explicitly over-stepping the boundary, in cases where it's needed.
+    (when undo-fu--respect
+      (when (string-equal last-command 'keyboard-quit)
+        (setq undo-fu--respect nil)
+        (setq undo-fu--checkpoint-is-blocking nil)
+        (setq undo-fu--checkpoint nil)
+        (message "Undo end-point ignored!")))
+
     (let*
       ;; Swap in 'undo' for our own function name.
       ;; Without this undo won't stop once the first undo step is reached.
