@@ -54,7 +54,20 @@
 (defvar-local undo-fu--respect t)
 
 
-;; Internal functions.
+;; Internal functions/macros.
+
+(defmacro undo-fu--with-message-suffix (suffix &rest body)
+  "Add text after the message output."
+  (declare (indent 1))
+  (let ((message-orig (cl-gensym "--message-suffix-")))
+    `
+    (cl-letf*
+      (
+        (,message-orig (symbol-function 'message))
+        ((symbol-function 'message)
+          (lambda (arg &rest args)
+            (apply ,message-orig (append (list (concat arg "%s")) args (list ,suffix))))))
+      ,@body)))
 
 
 (defun undo-fu--next-step (list)
@@ -106,7 +119,10 @@ wraps the `undo' function."
   (interactive "*")
   (unless undo-fu--checkpoint
     (user-error "Redo end-point not found!"))
-  (undo-fu-only-redo (undo-fu--count-redo-available undo-fu--checkpoint most-positive-fixnum)))
+
+  (undo-fu--with-message-suffix
+    " All"
+    (undo-fu-only-redo (undo-fu--count-redo-available undo-fu--checkpoint most-positive-fixnum))))
 
 
 (defun undo-fu-only-redo (&optional arg)
@@ -176,7 +192,11 @@ Optional argument ARG The number of steps to redo."
               ;; 'undo-in-region' unsupported.
               (when transient-mark-mode
                 (deactivate-mark))
-              (undo steps)
+              (undo-fu--with-message-suffix
+                (if undo-fu--respect
+                  ""
+                  " (unconstrained)")
+                (undo steps))
               t)
             (error (message "%s" (error-message-string err))))))
       (when success
@@ -238,7 +258,12 @@ Optional argument ARG the number of steps to undo."
               ;; 'undo-in-region' unsupported.
               (when transient-mark-mode
                 (deactivate-mark))
-              (undo-only steps)
+
+              (undo-fu--with-message-suffix
+                (if undo-fu--respect
+                  ""
+                  " (unconstrained)")
+                (undo-only steps))
               t)
             (error (message "%s" (error-message-string err))))))
       (when success
