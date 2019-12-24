@@ -1,4 +1,3 @@
-
 #######
 Undo Fu
 #######
@@ -6,7 +5,7 @@ Undo Fu
 Simple, stable undo with redo for emacs.
 
 Unlike alternatives, this provides redo functionality with emacs own undo,
-without loosing access to the full undo history emacs supports
+without losing access to the full undo history emacs supports
 allowing you to visit all previous states of the document.
 
 The changes compared emacs undo are as follows:
