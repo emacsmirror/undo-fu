@@ -64,7 +64,9 @@
 
 
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
-  "Add text after the message output."
+  "Add text after the message output.
+Argument SUFFIX is the text to add at the end of the message.
+Optional argument BODY runs with the message suffix."
   (declare (indent 1))
   (let ((message-orig (cl-gensym "--message-suffix-")))
     `
