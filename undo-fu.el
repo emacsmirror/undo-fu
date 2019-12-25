@@ -56,6 +56,13 @@
 
 ;; Internal functions/macros.
 
+(defun undo-fu--checkpoint-disable ()
+  "Disable check to prevent crossing the initial boundary when redoing."
+  (setq undo-fu--respect nil)
+  (setq undo-fu--checkpoint-is-blocking nil)
+  (setq undo-fu--checkpoint nil))
+
+
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
   "Add text after the message output."
   (declare (indent 1))
@@ -149,8 +156,7 @@ Optional argument ARG The number of steps to redo."
     ;; This allows explicitly over-stepping the boundary, in cases where it's needed.
     (when undo-fu--respect
       (when (string-equal last-command 'keyboard-quit)
-        (setq undo-fu--respect nil)
-        (setq undo-fu--checkpoint-is-blocking nil)
+        (undo-fu--checkpoint-disable)
         (message "Redo end-point stepped over!")))
 
     (when undo-fu--respect
@@ -234,9 +240,7 @@ Optional argument ARG the number of steps to undo."
     ;; This allows explicitly over-stepping the boundary, in cases where it's needed.
     (when undo-fu--respect
       (when (string-equal last-command 'keyboard-quit)
-        (setq undo-fu--respect nil)
-        (setq undo-fu--checkpoint-is-blocking nil)
-        (setq undo-fu--checkpoint nil)
+        (undo-fu--checkpoint-disable)
         (message "Undo end-point ignored!")))
 
     (let*
