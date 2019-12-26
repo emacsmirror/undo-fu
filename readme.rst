@@ -74,10 +74,21 @@ Details
   until a new chain of undo/redo events is started.
 
 
+Customization
+-------------
+
+``undo-fu-allow-undo-in-region``
+   This option exists for users who prefer to trade-off undo/redo functionality
+   with the ability to limit undo to a region.
+
+   When this boolean is ``t``, undoing with a selection
+   will use undo within this region.
+
+
 Limitations
 ===========
 
-The feature ``undo-in-region`` is currently unsupported.
+The feature ``undo-in-region`` is disabled by default.
 
 
 Installation
