@@ -147,7 +147,7 @@ wraps the `undo' function."
     " All"
     (undo-fu-only-redo (undo-fu--count-redo-available undo-fu--checkpoint most-positive-fixnum))))
 
-
+;;;###autoload
 (defun undo-fu-only-redo (&optional arg)
   "Redo an action until the initial undo action.
 
@@ -236,7 +236,7 @@ Optional argument ARG The number of steps to redo."
 
   (setq this-command 'undo-fu-only-redo))
 
-
+;;;###autoload
 (defun undo-fu-only-undo (&optional arg)
   "Undo the last action.
 
