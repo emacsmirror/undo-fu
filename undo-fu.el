@@ -135,6 +135,7 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
 
 ;; Public functions.
 
+;;;###autoload
 (defun undo-fu-only-redo-all ()
   "Redo all actions until the initial undo step.
 
@@ -143,9 +144,7 @@ wraps the `undo' function."
   (unless undo-fu--checkpoint
     (user-error "Redo end-point not found!"))
 
-  (undo-fu--with-message-suffix
-    " All"
-    (undo-fu-only-redo (undo-fu--count-redo-available undo-fu--checkpoint most-positive-fixnum))))
+  (undo-fu--with-message-suffix " All" (undo-fu-only-redo most-positive-fixnum)))
 
 ;;;###autoload
 (defun undo-fu-only-redo (&optional arg)
