@@ -201,6 +201,14 @@ Optional argument ARG The number of steps to redo."
 
     (let*
       (
+        ;; Important to clamp before assigning 'last-command'
+        ;; since it's used when checking the available steps.
+        (steps
+          (if (numberp arg)
+            (if (and undo-fu--respect undo-fu--checkpoint)
+              (undo-fu--count-redo-available undo-fu--checkpoint arg)
+              arg)
+            1))
         (last-command
           (cond
             (was-undo
@@ -212,12 +220,6 @@ Optional argument ARG The number of steps to redo."
             (t
               ;; No change.
               last-command)))
-        (steps
-          (if (numberp arg)
-            (if (and undo-fu--respect undo-fu--checkpoint)
-              (undo-fu--count-redo-available undo-fu--checkpoint arg)
-              arg)
-            1))
         (success
           (condition-case err
             (progn
@@ -281,6 +283,7 @@ Optional argument ARG the number of steps to undo."
       ;; Swap in 'undo' for our own function name.
       ;; Without this undo won't stop once the first undo step is reached.
       (
+        (steps (or arg 1))
         (last-command
           (cond
             (was-undo-or-redo
@@ -289,7 +292,6 @@ Optional argument ARG the number of steps to undo."
             (t
               ;; No change.
               last-command)))
-        (steps (or arg 1))
         (success
           (condition-case err
             (progn
