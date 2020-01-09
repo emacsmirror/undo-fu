@@ -309,6 +309,14 @@ Optional argument ARG the number of steps to undo."
           (setq undo-fu--checkpoint-is-blocking nil)))))
   (setq this-command 'undo-fu-only-undo))
 
+;; Evil Mode (setup if in use)
+;;
+;; Don't let these commands repeat.
+(with-eval-after-load 'evil
+  (evil-declare-not-repeat 'undo-fu-only-undo)
+  (evil-declare-not-repeat 'undo-fu-only-redo)
+  (evil-declare-not-repeat 'undo-fu-only-redo-all))
+
 (provide 'undo-fu)
 
 ;;; undo-fu.el ends here
