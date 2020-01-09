@@ -332,10 +332,13 @@ Optional argument ARG the number of steps to undo."
 ;; Evil Mode (setup if in use)
 ;;
 ;; Don't let these commands repeat.
-(with-eval-after-load 'evil
-  (evil-declare-not-repeat 'undo-fu-only-undo)
-  (evil-declare-not-repeat 'undo-fu-only-redo)
-  (evil-declare-not-repeat 'undo-fu-only-redo-all))
+(eval-after-load
+  'evil
+  '
+  (progn
+    (evil-declare-not-repeat 'undo-fu-only-undo)
+    (evil-declare-not-repeat 'undo-fu-only-redo)
+    (evil-declare-not-repeat 'undo-fu-only-redo-all)))
 
 (provide 'undo-fu)
 
