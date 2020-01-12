@@ -4,11 +4,11 @@ Undo Fu
 
 Simple, stable linear undo with redo for Emacs.
 
-Unlike alternatives, this provides redo functionality with emacs own undo,
-without losing access to the full undo history emacs supports
+Unlike alternatives, this provides redo functionality with Emacs own undo,
+without losing access to the full undo history Emacs supports
 allowing you to visit all previous states of the document.
 
-The changes compared emacs undo are as follows:
+The changes compared Emacs undo are as follows:
 
 - Redo will not redo past the initial undo action.
 - Redo will not undo if the last action in the undo stack is not an undo.
@@ -22,7 +22,7 @@ which can be error prone.
 Motivation
 ==========
 
-The default emacs undo has two limitations this package aims to resolve,
+The default Emacs undo has two limitations this package aims to resolve,
 
 - Two actions are required to initiate redo.
 - It's easy to accidentally redo past the point where undo started
@@ -70,7 +70,7 @@ Details
 
   If you want to keep redoing past this point
   you're prompted to press ``Ctrl-G`` (``keyboard-quit``),
-  then you can continue to redo using emacs default behavior
+  then you can continue to redo using Emacs default behavior
   until a new chain of undo/redo events is started.
 
 
