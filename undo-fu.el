@@ -185,6 +185,12 @@ Optional argument ARG The number of steps to redo."
         (undo-fu--checkpoint-disable)
         (message "Redo end-point stepped over!")))
 
+    ;; Ensure the undo checkpoint is usable.
+    (when undo-fu--respect
+      (when (eq last-command 'undo)
+        (undo-fu--checkpoint-disable)
+        (message "Redo 'undo' called, not 'undo-fu-only-undo', checkpoint disabled!")))
+
     (when undo-fu--respect
       (unless
         ;; Ensure the next steps is a redo action.
@@ -207,7 +213,14 @@ Optional argument ARG The number of steps to redo."
       ;; the redo action will undo, which isn't so useful.
       ;; This makes redo-only the reverse of undo-only.
 
-      (when (not (eq t pending-undo-list))
+      (when
+        (and
+          ;; Not the first redo action.
+          (not (eq t pending-undo-list))
+          ;; Sanity check, since it's not just being used as a marker
+          ;; any (unlikely) issues here would error.
+          (not (null undo-fu--checkpoint)))
+
         ;; Skip to the last matching redo step before the checkpoint.
         (let
           (
