@@ -2,7 +2,7 @@
 Undo Fu
 #######
 
-Simple, stable undo with redo for emacs.
+Simple, stable linear undo with redo for Emacs.
 
 Unlike alternatives, this provides redo functionality with emacs own undo,
 without losing access to the full undo history emacs supports

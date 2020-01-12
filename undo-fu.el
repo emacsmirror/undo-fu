@@ -199,6 +199,26 @@ Optional argument ARG The number of steps to redo."
         "Redo end-point hit (%s to step over it)"
         (substitute-command-keys "\\[keyboard-quit]")))
 
+    (when undo-fu--respect
+      ;; Implement "linear" undo.
+      ;; So undo/redo chains before the undo checkpoint never redo an undo step.
+      ;;
+      ;; Without this, redo is still usable, it's just that after undo,redo,undo, ...
+      ;; the redo action will undo, which isn't so useful.
+      ;; This makes redo-only the reverse of undo-only.
+
+      (when (not (eq t pending-undo-list))
+        ;; Skip to the last matching redo step before the checkpoint.
+        (let
+          (
+            (list pending-undo-list)
+            (checkpoint-length (length undo-fu--checkpoint)))
+          (while
+            (and
+              (setq list (gethash list undo-equiv-table))
+              (eq (last list checkpoint-length) undo-fu--checkpoint))
+            (setq pending-undo-list list)))))
+
     (let*
       (
         ;; Important to clamp before assigning 'last-command'
