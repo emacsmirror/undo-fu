@@ -266,7 +266,10 @@ Optional argument ARG The number of steps to redo."
                   " (unconstrained)")
                 (undo steps))
               t)
-            (error (message "%s" (error-message-string err))))))
+            (error
+              (progn
+                (message "%s" (error-message-string err))
+                nil)))))
       (when success
         (when undo-fu--respect
           (when (eq (gethash buffer-undo-list undo-equiv-table) undo-fu--checkpoint)
@@ -341,7 +344,10 @@ Optional argument ARG the number of steps to undo."
                   (undo steps)
                   (undo-only steps)))
               t)
-            (error (message "%s" (error-message-string err))))))
+            (error
+              (progn
+                (message "%s" (error-message-string err))
+                nil)))))
       (when success
         (when undo-fu--respect
           (setq undo-fu--checkpoint-is-blocking nil)))))
