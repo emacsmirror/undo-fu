@@ -356,6 +356,7 @@ Optional argument ARG the number of steps to undo."
 ;; Evil Mode (setup if in use)
 ;;
 ;; Don't let these commands repeat.
+(declare-function evil-declare-not-repeat "ext:evil-common")
 (eval-after-load
   'evil
   '
