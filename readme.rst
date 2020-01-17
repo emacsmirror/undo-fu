@@ -4,14 +4,14 @@ Undo Fu
 
 Simple, stable linear undo with redo for Emacs.
 
-Unlike alternatives, this provides redo functionality with Emacs own undo,
-without losing access to the full undo history Emacs supports
-allowing you to visit all previous states of the document.
+This is a light weight wrapper for Emacs built-in undo system,
+adding convenient undo/redo without losing access to the full undo history,
+allowing you to visit all previous states of the document if you need.
 
 The changes compared Emacs undo are as follows:
 
-- Redo will not redo past the initial undo action.
-- Redo will not undo if the last action in the undo stack is not an undo.
+- Redo will not pass the initial undo action.
+- Redo will not undo *(unlike Emacs redo which traverses previous undo/redo steps)*.
 
 - These constraints can be temporarily disabled by pressing C-g before undo or redo.
 
@@ -42,7 +42,7 @@ This package exposes the following functions:
 Key Bindings
 ------------
 
-You will need to make these to keys yourself.
+You will need to map these to keys yourself.
 
 Key binding example for evil-mode:
 
