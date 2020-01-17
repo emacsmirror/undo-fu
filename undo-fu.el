@@ -43,7 +43,8 @@
 
 ;;; Code:
 
-;; Custom variables.
+;; ---------------------------------------------------------------------------
+;; Custom Variables
 
 (defcustom undo-fu-allow-undo-in-region nil
   "When t, use `undo-in-region' when a selection is present.
@@ -52,8 +53,8 @@ causing undo-fu to work with reduced functionality when a selection exists."
   :group 'undo-fu
   :type 'boolean)
 
-
-;; Internal variables.
+;; ---------------------------------------------------------------------------
+;; Internal Variables
 
 ;; First undo step in the chain, don't redo past this.
 (defvar-local undo-fu--checkpoint nil)
@@ -68,8 +69,8 @@ causing undo-fu to work with reduced functionality when a selection exists."
 ;; Only use when `undo-fu-allow-undo-in-region' is true.
 (defvar-local undo-fu--in-region nil)
 
-
-;; Internal functions/macros.
+;; ---------------------------------------------------------------------------
+;; Internal Functions/Macros
 
 (defun undo-fu--checkpoint-disable ()
   "Disable check to prevent crossing the initial boundary when redoing."
@@ -135,8 +136,8 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
       pending-undo-list)
     list-to-find count-limit))
 
-
-;; Public functions.
+;; ---------------------------------------------------------------------------
+;; Public Functions
 
 ;;;###autoload
 (defun undo-fu-only-redo-all ()
