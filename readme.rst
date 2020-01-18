@@ -109,3 +109,33 @@ Combined with key bindings, for evil-mode:
      (global-undo-tree-mode -1)
      (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
      (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+
+
+Undo Tree (Evil Mode)
+---------------------
+
+At the time of writing undo-tree is enabled by default in evil-mode,
+This defines it's own undo data-structures and is not compatible with undo-fu,
+
+When using evil-mode be sure to run ``(global-undo-tree-mode -1)`` to avoid problems.
+
+
+Other Packages
+==============
+
+As there are multiple packages which deal with undo, it's worth mentioning how this interacts with other packages.
+
+`Undo Fu Session <https://gitlab.com/ideasman42/emacs-undo-fu-session>`__
+   This package is intended for use with undo-fu,
+   as a way to save and restore undo sessions, even after restarting Emacs.
+
+`Undohist <https://github.com/emacsorphanage/undohist>`__
+   This packages stores undo data between sessions,
+   while it is compatible with undo-fu on a basic level, it doesn't store redo information
+   (``undo-fu-session`` is an improved alternative).
+
+`Undo Tree <https://www.emacswiki.org/emacs/UndoTree>`__
+   This handles undo steps as a tree by re-implementing parts of Emacs undo internals.
+
+   Undo-Fu was written to be a simpler alternative
+   as Undo Tree had long standing unresolved bugs at the time of writing.
