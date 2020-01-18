@@ -72,13 +72,22 @@ causing undo-fu to work with reduced functionality when a selection exists."
 ;; ---------------------------------------------------------------------------
 ;; Internal Functions/Macros
 
+(defun undo-fu--checkpoint-set ()
+  "Set the checkpoint."
+  (setq undo-fu--checkpoint (cdr buffer-undo-list))
+  (setq undo-fu--checkpoint-length nil))
+
+(defun undo-fu--checkpoint-unset ()
+  "Unset the checkpoint."
+  (setq undo-fu--checkpoint nil)
+  (setq undo-fu--checkpoint-length nil))
+
 (defun undo-fu--checkpoint-disable ()
-  "Disable check to prevent crossing the initial boundary when redoing."
+  "Disable using the checkpoint, allowing the initial boundary to be crossed when redoing."
   (setq undo-fu--respect nil)
   (setq undo-fu--in-region nil)
   (setq undo-fu--checkpoint-is-blocking nil)
-  (setq undo-fu--checkpoint nil)
-  (setq undo-fu--checkpoint-length nil))
+  (undo-fu--checkpoint-unset))
 
 
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
@@ -302,8 +311,7 @@ Optional argument ARG the number of steps to undo."
         (setq undo-fu--respect t)))
 
     (when (or undo-fu--checkpoint-is-blocking (not was-undo-or-redo))
-      (setq undo-fu--checkpoint (cdr buffer-undo-list))
-      (setq undo-fu--checkpoint-length nil))
+      (undo-fu--checkpoint-set))
 
     (when (region-active-p)
       (if undo-fu-allow-undo-in-region
