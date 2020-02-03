@@ -28,8 +28,8 @@
 ;; The redo operation can be accessed from a key binding
 ;; and stops redoing once the initial undo action is reached.
 ;;
-;; If you want to cross the initial undo step to access
-;; the full history, running (keyboard-quit) typically C-g.
+;; If you want to cross the initial undo boundary to access
+;; the full history, running [keyboard-quit] (typically C-g).
 ;; lets you continue redoing for functionality not typically
 ;; accessible with regular undo/redo.
 ;;
@@ -157,7 +157,7 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
 wraps the `undo' function."
   (interactive "*")
   (unless undo-fu--checkpoint
-    (user-error "Redo end-point not found!"))
+    (user-error "Redo checkpoint not found!"))
 
   (undo-fu--with-message-suffix " All" (undo-fu-only-redo most-positive-fixnum)))
 
@@ -194,7 +194,8 @@ Optional argument ARG The number of steps to redo."
         (deactivate-mark)))
 
     ;; Allow crossing the boundary, if we press [keyboard-quit].
-    ;; This allows explicitly over-stepping the boundary, in cases where it's needed.
+    ;; This allows explicitly over-stepping the boundary,
+    ;; in cases when users want to bypass this constraint.
     (when undo-fu--respect
       (when (string-equal last-command 'keyboard-quit)
         (undo-fu--checkpoint-disable)
@@ -221,7 +222,7 @@ Optional argument ARG The number of steps to redo."
         (substitute-command-keys "\\[keyboard-quit]")))
 
     (when undo-fu--respect
-      ;; Implement "linear" undo.
+      ;; Implement "linear" redo.
       ;; So undo/redo chains before the undo checkpoint never redo an undo step.
       ;;
       ;; Without this, redo is still usable, it's just that after undo,redo,undo, ...
@@ -250,8 +251,8 @@ Optional argument ARG The number of steps to redo."
 
     (let*
       (
-        ;; Important to clamp before assigning 'last-command'
-        ;; since it's used when checking the available steps.
+        ;; It's important to clamp the number of steps before assigning
+        ;; 'last-command' since it's used when checking the available steps.
         (steps
           (if (numberp arg)
             (if (and undo-fu--respect undo-fu--checkpoint)
