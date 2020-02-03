@@ -132,15 +132,17 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
     count))
 
 
-(defun undo-fu--count-redo-available (list-to-find count-limit)
+(defun undo-fu--count-redo-available (list-to-find count-limit was-undo)
   "Count the number of redo steps until a previously stored step.
 
 Argument LIST-TO-FIND count the steps up until this undo step.
 Argument COUNT-LIMIT don't count past his value.
+Argument WAS-UNDO when non-nil,
+prevents the `pending-undo-list' from being used.
 
 Returns the number of steps to reach this list or COUNT-LIMIT."
   (undo-fu--count-step-to-other
-    (if (or (eq pending-undo-list t) (member last-command '(undo undo-fu-only-undo)))
+    (if (or (eq pending-undo-list t) was-undo)
       (undo-fu--next-step buffer-undo-list)
       pending-undo-list)
     list-to-find count-limit))
@@ -253,7 +255,7 @@ Optional argument ARG The number of steps to redo."
         (steps
           (if (numberp arg)
             (if (and undo-fu--respect undo-fu--checkpoint)
-              (undo-fu--count-redo-available undo-fu--checkpoint arg)
+              (undo-fu--count-redo-available undo-fu--checkpoint arg was-undo)
               arg)
             1))
         (last-command
