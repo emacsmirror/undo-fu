@@ -89,7 +89,6 @@ causing undo-fu to work with reduced functionality when a selection exists."
   (setq undo-fu--checkpoint-is-blocking nil)
   (undo-fu--checkpoint-unset))
 
-
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
   "Add text after the message output.
 Argument SUFFIX is the text to add at the end of the message.
@@ -105,7 +104,6 @@ Optional argument BODY runs with the message suffix."
             (apply ,message-orig (append (list (concat arg "%s")) args (list ,suffix))))))
       ,@body)))
 
-
 (defun undo-fu--next-step (list)
   "Get the next undo step in the list.
 
@@ -115,7 +113,6 @@ Argument LIST compatible list `buffer-undo-list'."
   (while (and list (null (car list)))
     (setq list (cdr list)))
   list)
-
 
 (defun undo-fu--count-step-to-other (list list-to-find count-limit)
   "Count the number of steps to an item in the undo list.
@@ -130,7 +127,6 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
       (setq list (undo-fu--next-step list))
       (setq count (1+ count)))
     count))
-
 
 (defun undo-fu--count-redo-available (list-to-find count-limit was-undo)
   "Count the number of redo steps until a previously stored step.
