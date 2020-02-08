@@ -94,7 +94,7 @@ The feature ``undo-in-region`` is disabled by default.
 Installation
 ============
 
-The package is available in melpa as ``undo-fu``.
+The package is `available in melpa <https://melpa.org/#/undo-fu>`__ as ``undo-fu``.
 
 .. code-block:: elisp
 
