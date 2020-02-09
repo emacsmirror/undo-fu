@@ -60,8 +60,6 @@ causing undo-fu to work with reduced functionality when a selection exists."
 (defvar-local undo-fu--checkpoint nil)
 ;; The length of 'undo-fu--checkpoint' (lazy initialize).
 (defvar-local undo-fu--checkpoint-length nil)
-;; We have reached the checkpoint, don't redo.
-(defvar-local undo-fu--checkpoint-is-blocking nil)
 ;; Apply undo/redo constraints to stop redo from undoing or
 ;; passing the initial undo checkpoint.
 (defvar-local undo-fu--respect t)
@@ -86,7 +84,6 @@ causing undo-fu to work with reduced functionality when a selection exists."
   "Disable using the checkpoint, allowing the initial boundary to be crossed when redoing."
   (setq undo-fu--respect nil)
   (setq undo-fu--in-region nil)
-  (setq undo-fu--checkpoint-is-blocking nil)
   (undo-fu--checkpoint-unset))
 
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
@@ -197,26 +194,6 @@ Optional argument ARG The number of steps to redo."
         (undo-fu--checkpoint-disable)
         (message "Redo end-point stepped over!")))
 
-    ;; Ensure the undo checkpoint is usable.
-    (when undo-fu--respect
-      (when (eq last-command 'undo)
-        (undo-fu--checkpoint-disable)
-        (message "Redo 'undo' called, not 'undo-fu-only-undo', checkpoint disabled!")))
-
-    (when undo-fu--respect
-      (unless
-        ;; Ensure the next steps is a redo action.
-        (let ((list (undo-fu--next-step buffer-undo-list)))
-          (and list (gethash list undo-equiv-table)))
-        (user-error
-          "Redo step not found (%s to ignore)"
-          (substitute-command-keys "\\[keyboard-quit]"))))
-
-    (when undo-fu--checkpoint-is-blocking
-      (user-error
-        "Redo end-point hit (%s to step over it)"
-        (substitute-command-keys "\\[keyboard-quit]")))
-
     (when undo-fu--respect
       ;; Implement "linear" redo.
       ;; So undo/redo chains before the undo checkpoint never redo an undo step.
@@ -252,7 +229,16 @@ Optional argument ARG The number of steps to redo."
         (steps
           (if (numberp arg)
             (if (and undo-fu--respect undo-fu--checkpoint)
-              (undo-fu--count-redo-available undo-fu--checkpoint arg was-undo)
+              (let ((steps-test (undo-fu--count-redo-available undo-fu--checkpoint arg was-undo)))
+
+                ;; Ensure the next steps is a redo action.
+                (when (zerop steps-test)
+                  (user-error
+                    "Redo step not found (%s to ignore)"
+                    (substitute-command-keys "\\[keyboard-quit]")))
+
+                steps-test)
+
               arg)
             1))
         (last-command
@@ -279,12 +265,9 @@ Optional argument ARG The number of steps to redo."
               (progn
                 (message "%s" (error-message-string err))
                 nil)))))
-      (when success
-        (when undo-fu--respect
-          (when (eq (gethash buffer-undo-list undo-equiv-table) undo-fu--checkpoint)
-            (setq undo-fu--checkpoint-is-blocking t))))))
 
-  (setq this-command 'undo-fu-only-redo))
+      (setq this-command 'undo-fu-only-redo)
+      success)))
 
 ;;;###autoload
 (defun undo-fu-only-undo (&optional arg)
@@ -309,7 +292,7 @@ Optional argument ARG the number of steps to undo."
           (setq undo-fu--in-region nil))
         (setq undo-fu--respect t)))
 
-    (when (or undo-fu--checkpoint-is-blocking (not was-undo-or-redo))
+    (when (not was-undo-or-redo)
       (undo-fu--checkpoint-set))
 
     (when (region-active-p)
@@ -356,10 +339,9 @@ Optional argument ARG the number of steps to undo."
               (progn
                 (message "%s" (error-message-string err))
                 nil)))))
-      (when success
-        (when undo-fu--respect
-          (setq undo-fu--checkpoint-is-blocking nil)))))
-  (setq this-command 'undo-fu-only-undo))
+
+      (setq this-command 'undo-fu-only-undo)
+      success)))
 
 ;; Evil Mode (setup if in use)
 ;;
