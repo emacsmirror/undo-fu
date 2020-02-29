@@ -158,7 +158,7 @@ This command is needed when `undo-fu-ignore-keyboard-quit' is t,
 since in this case `keyboard-quit' cannot be used
 to perform unconstrained undo/redo actions."
   (interactive)
-  (message "Undo end-point cleared!")
+  (message "Undo checkpoint cleared!")
   (undo-fu--checkpoint-disable)
 
   ;; Needed not to interfere with undo/redo stepping behavior.
@@ -213,7 +213,7 @@ Optional argument ARG The number of steps to redo."
     (when (region-active-p)
       (if undo-fu-allow-undo-in-region
         (progn
-          (message "Undo in region in use. Undo end-point ignored!")
+          (message "Undo in region in use. Undo checkpoint ignored!")
           (undo-fu--checkpoint-disable)
           (setq undo-fu--in-region t))
         ;; Default behavior, just remove selection.
@@ -225,7 +225,7 @@ Optional argument ARG The number of steps to redo."
     (when undo-fu--respect
       (when (member last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
         (undo-fu--checkpoint-disable)
-        (message "Redo end-point stepped over!")))
+        (message "Redo checkpoint stepped over!")))
 
     (when undo-fu--respect
       ;; Implement "linear" redo.
@@ -267,7 +267,7 @@ Optional argument ARG The number of steps to redo."
                 ;; Ensure the next steps is a redo action.
                 (when (zerop steps-test)
                   (user-error
-                    "Redo end-point reached (%s to ignore)"
+                    "Redo checkpoint reached (%s to ignore)"
                     (substitute-command-keys (format "\\[%s]" (symbol-name undo-fu-quit-command)))))
 
                 steps-test)
@@ -335,7 +335,7 @@ Optional argument ARG the number of steps to undo."
     (when (region-active-p)
       (if undo-fu-allow-undo-in-region
         (progn
-          (message "Undo in region in use. Undo end-point ignored!")
+          (message "Undo in region in use. Undo checkpoint ignored!")
           (undo-fu--checkpoint-disable)
           (setq undo-fu--in-region t))
         ;; Default behavior, just remove selection.
@@ -347,7 +347,7 @@ Optional argument ARG the number of steps to undo."
     (when undo-fu--respect
       (when (member last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
         (undo-fu--checkpoint-disable)
-        (message "Undo end-point ignored!")))
+        (message "Undo checkpoint ignored!")))
 
     (let*
       ;; Swap in 'undo' for our own function name.
