@@ -3,6 +3,11 @@
 Change Log
 ##########
 
+- In development.
+
+  - Add ``undo-fu-ignore-keyboard-quit`` option for explicit non-linear behavior.
+  - Support using ``undo-fu-only-redo`` after regular ``undo`` / ``undo-only``.
+
 - Version 0.2 (2020-01-12)
 
   - Linear redo support (which wont undo).

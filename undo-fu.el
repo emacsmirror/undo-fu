@@ -53,6 +53,13 @@ causing undo-fu to work with reduced functionality when a selection exists."
   :group 'undo-fu
   :type 'boolean)
 
+(defcustom undo-fu-ignore-keyboard-quit nil
+  "When t, don't use `keyboard-quit' to disable linear undo/redo behavior.
+
+Instead, explicitly call `undo-fu-disable-checkpoint'."
+  :group 'undo-fu
+  :type 'boolean)
+
 ;; ---------------------------------------------------------------------------
 ;; Internal Variables
 
@@ -144,6 +151,28 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
 ;; Public Functions
 
 ;;;###autoload
+(defun undo-fu-disable-checkpoint ()
+  "Remove the undo-fu checkpoint, making all future actions unconstrained.
+
+This command is needed when `undo-fu-ignore-keyboard-quit' is t,
+since in this case `keyboard-quit' cannot be used
+to perform unconstrained undo/redo actions."
+  (interactive)
+  (message "Undo end-point cleared!")
+  (undo-fu--checkpoint-disable)
+
+  ;; Needed not to interfere with undo/redo stepping behavior.
+  (let*
+    ( ;; Assign for convenience.
+      (was-undo (not (null (member last-command '(undo undo-fu-only-undo)))))
+      (was-redo (not (null (member last-command '(undo-fu-only-redo)))))
+      (was-undo-or-redo (or was-undo was-redo)))
+
+    (when was-undo-or-redo
+      (setq this-command last-command)
+      (setq real-this-command real-last-command))))
+
+;;;###autoload
 (defun undo-fu-only-redo-all ()
   "Redo all actions until the initial undo step.
 
@@ -167,7 +196,11 @@ Optional argument ARG The number of steps to redo."
     ( ;; Assign for convenience.
       (was-undo (not (null (member last-command '(undo undo-fu-only-undo)))))
       (was-redo (not (null (member last-command '(undo-fu-only-redo)))))
-      (was-undo-or-redo (or was-undo was-redo)))
+      (was-undo-or-redo (or was-undo was-redo))
+      (undo-fu-quit-command
+        (if undo-fu-ignore-keyboard-quit
+          'undo-fu-disable-checkpoint
+          'keyboard-quit)))
 
     ;; Reset the option to not respect the checkpoint
     ;; after running non-undo related commands.
@@ -190,7 +223,7 @@ Optional argument ARG The number of steps to redo."
     ;; This allows explicitly over-stepping the boundary,
     ;; in cases when users want to bypass this constraint.
     (when undo-fu--respect
-      (when (string-equal last-command 'keyboard-quit)
+      (when (member last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
         (undo-fu--checkpoint-disable)
         (message "Redo end-point stepped over!")))
 
@@ -234,8 +267,8 @@ Optional argument ARG The number of steps to redo."
                 ;; Ensure the next steps is a redo action.
                 (when (zerop steps-test)
                   (user-error
-                    "Redo step not found (%s to ignore)"
-                    (substitute-command-keys "\\[keyboard-quit]")))
+                    "Redo end-point reached (%s to ignore)"
+                    (substitute-command-keys (format "\\[%s]" (symbol-name undo-fu-quit-command)))))
 
                 steps-test)
 
@@ -282,7 +315,11 @@ Optional argument ARG the number of steps to undo."
     ( ;; Assign for convenience.
       (was-undo (not (null (member last-command '(undo undo-fu-only-undo)))))
       (was-redo (not (null (member last-command '(undo-fu-only-redo)))))
-      (was-undo-or-redo (or was-undo was-redo)))
+      (was-undo-or-redo (or was-undo was-redo))
+      (undo-fu-quit-command
+        (if undo-fu-ignore-keyboard-quit
+          'undo-fu-disable-checkpoint
+          'keyboard-quit)))
 
     ;; Reset the option to not respect the checkpoint
     ;; after running non-undo related commands.
@@ -305,9 +342,10 @@ Optional argument ARG the number of steps to undo."
         (deactivate-mark)))
 
     ;; Allow crossing the boundary, if we press [keyboard-quit].
-    ;; This allows explicitly over-stepping the boundary, in cases where it's needed.
+    ;; This allows explicitly over-stepping the boundary,
+    ;; in cases when users want to bypass this constraint.
     (when undo-fu--respect
-      (when (string-equal last-command 'keyboard-quit)
+      (when (member last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
         (undo-fu--checkpoint-disable)
         (message "Undo end-point ignored!")))
 
@@ -351,6 +389,7 @@ Optional argument ARG the number of steps to undo."
   'evil
   '
   (progn
+    (evil-declare-not-repeat 'undo-fu-disable-checkpoint)
     (evil-declare-not-repeat 'undo-fu-only-undo)
     (evil-declare-not-repeat 'undo-fu-only-redo)
     (evil-declare-not-repeat 'undo-fu-only-redo-all)))

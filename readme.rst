@@ -37,6 +37,7 @@ This package exposes the following functions:
 - ``undo-fu-only-undo``
 - ``undo-fu-only-redo``
 - ``undo-fu-only-redo-all``
+- ``undo-fu-disable-checkpoint`` (only needed when ``undo-fu-ignore-keyboard-quit`` is in use).
 
 
 Key Bindings
@@ -83,6 +84,12 @@ Customization
 
    When this boolean is ``t``, undoing with a selection
    will use undo within this region.
+``undo-fu-ignore-keyboard-quit``
+   Don't use ``Ctrl-G`` (``keyboard-quit``) for non-linear behavior,
+   instead, use the ``undo-fu-disable-checkpoint`` command.
+
+   This was added for users who prefer to explicitly activate this behavior.
+   As ``keyboard-quit`` may be used for other reasons.
 
 
 Limitations
