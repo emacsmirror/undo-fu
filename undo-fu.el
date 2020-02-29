@@ -147,6 +147,14 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
       pending-undo-list)
     list-to-find count-limit))
 
+(defun undo-fu--was-undo ()
+  "Return t when the last command was undo."
+  (not (null (member last-command '(undo undo-fu-only-undo)))))
+
+(defun undo-fu--was-redo ()
+  "Return t when the last command was redo."
+  (not (null (member last-command '(undo-fu-only-redo)))))
+
 ;; ---------------------------------------------------------------------------
 ;; Public Functions
 
@@ -158,15 +166,15 @@ This command is needed when `undo-fu-ignore-keyboard-quit' is t,
 since in this case `keyboard-quit' cannot be used
 to perform unconstrained undo/redo actions."
   (interactive)
-  (message "Undo checkpoint cleared!")
-  (undo-fu--checkpoint-disable)
+  (let ((was-undo-or-redo (or (undo-fu--was-undo) (undo-fu--was-redo))))
+    ;; Display an appropriate message.
+    (if was-undo-or-redo
+      (if (and undo-fu--respect undo-fu--checkpoint)
+        (message "Undo checkpoint cleared!")
+        (message "Undo checkpoint already cleared!"))
+      (message "Undo checkpoint disabled for next undo action!"))
 
-  ;; Needed not to interfere with undo/redo stepping behavior.
-  (let*
-    ( ;; Assign for convenience.
-      (was-undo (not (null (member last-command '(undo undo-fu-only-undo)))))
-      (was-redo (not (null (member last-command '(undo-fu-only-redo)))))
-      (was-undo-or-redo (or was-undo was-redo)))
+    (undo-fu--checkpoint-disable)
 
     (when was-undo-or-redo
       (setq this-command last-command)
@@ -194,8 +202,8 @@ Optional argument ARG The number of steps to redo."
 
   (let*
     ( ;; Assign for convenience.
-      (was-undo (not (null (member last-command '(undo undo-fu-only-undo)))))
-      (was-redo (not (null (member last-command '(undo-fu-only-redo)))))
+      (was-undo (undo-fu--was-undo))
+      (was-redo (undo-fu--was-redo))
       (was-undo-or-redo (or was-undo was-redo))
       (undo-fu-quit-command
         (if undo-fu-ignore-keyboard-quit
@@ -313,8 +321,8 @@ Optional argument ARG the number of steps to undo."
 
   (let*
     ( ;; Assign for convenience.
-      (was-undo (not (null (member last-command '(undo undo-fu-only-undo)))))
-      (was-redo (not (null (member last-command '(undo-fu-only-redo)))))
+      (was-undo (undo-fu--was-undo))
+      (was-redo (undo-fu--was-redo))
       (was-undo-or-redo (or was-undo was-redo))
       (undo-fu-quit-command
         (if undo-fu-ignore-keyboard-quit
