@@ -5,6 +5,8 @@ Change Log
 
 - In development.
 
+  - Support non-destructive commands between undo/redo actions without breaking the chain.
+    Internally ``last-command`` is no longer used to detect changes.
   - Add ``undo-fu-ignore-keyboard-quit`` option for explicit non-linear behavior.
   - Support using ``undo-fu-only-redo`` after regular ``undo`` / ``undo-only``.
 
