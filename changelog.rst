@@ -3,7 +3,7 @@
 Change Log
 ##########
 
-- In development.
+- Version 0.3 (2020-03-03)
 
   - Support non-destructive commands between undo/redo actions without breaking the chain.
     Internally ``last-command`` is no longer used to detect changes.
