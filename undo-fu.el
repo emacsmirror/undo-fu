@@ -74,7 +74,7 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
 ;; Only use when `undo-fu-allow-undo-in-region' is true.
 (defvar-local undo-fu--in-region nil)
 ;; Track the last undo/redo direction.
-;; Use in conjunction with `undo-fu--was-undo-or-redo'.
+;; Use in conjunction with `undo-fu--was-undo-or-redo' to ensure the value isn't stale.
 (defvar-local undo-fu--was-redo nil)
 
 ;; ---------------------------------------------------------------------------
@@ -139,7 +139,7 @@ Returns the number of steps to reach this list or COUNT-LIMIT."
   "Count the number of redo steps until a previously stored step.
 
 Argument LIST-TO-FIND count the steps up until this undo step.
-Argument COUNT-LIMIT don't count past his value.
+Argument COUNT-LIMIT don't count past this value.
 Argument WAS-UNDO when non-nil,
 prevents the `pending-undo-list' from being used.
 
@@ -176,7 +176,6 @@ to perform unconstrained undo/redo actions."
     (message "Undo checkpoint disabled for next undo action!"))
 
   (undo-fu--checkpoint-disable))
-
 
 ;;;###autoload
 (defun undo-fu-only-redo-all ()
