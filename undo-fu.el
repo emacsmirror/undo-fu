@@ -404,15 +404,23 @@ Optional argument ARG the number of steps to undo."
 ;; Evil Mode (setup if in use)
 ;;
 ;; Don't let these commands repeat.
+;;
+;; Notes:
+;; - Use `with-eval-after-load' once Emacs version 24.4 is the minimum supported version.
+;; - Package lint complains about using this command,
+;;   however it's needed to avoid issues with `evil-mode'.
 (declare-function evil-declare-not-repeat "ext:evil-common")
 (eval-after-load
   'evil
   '
   (progn
-    (evil-declare-not-repeat 'undo-fu-disable-checkpoint)
-    (evil-declare-not-repeat 'undo-fu-only-undo)
-    (evil-declare-not-repeat 'undo-fu-only-redo)
-    (evil-declare-not-repeat 'undo-fu-only-redo-all)))
+    (mapc
+      #'evil-declare-not-repeat
+      (list
+        'undo-fu-disable-checkpoint
+        'undo-fu-only-redo
+        'undo-fu-only-redo-all
+        'undo-fu-only-undo))))
 
 (provide 'undo-fu)
 
