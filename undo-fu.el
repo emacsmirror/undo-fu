@@ -111,6 +111,11 @@ Optional argument BODY runs with the message suffix."
             (apply ,message-orig (append (list (concat arg "%s")) args (list ,suffix))))))
       ,@body)))
 
+(defun undo-fu--undo-enabled-or-error ()
+  "Raise a user error when undo is disabled."
+  (when (eq t buffer-undo-list)
+    (user-error "Undo has been disabled!")))
+
 (defun undo-fu--next-step (list)
   "Get the next undo step in the list.
 
@@ -196,6 +201,8 @@ wraps the `undo' function.
 
 Optional argument ARG The number of steps to redo."
   (interactive "*p")
+  ;; Raise error since we can't do anything useful in this case.
+  (undo-fu--undo-enabled-or-error)
 
   (let*
     ( ;; Assign for convenience.
@@ -329,6 +336,8 @@ wraps the `undo-only' function.
 
 Optional argument ARG the number of steps to undo."
   (interactive "*p")
+  ;; Raise error since we can't do anything useful in this case.
+  (undo-fu--undo-enabled-or-error)
 
   (let*
     ( ;; Assign for convenience.

@@ -3,6 +3,11 @@
 Change Log
 ##########
 
+- In development
+
+  - Raise an error when using undo commands when undo has been disabled for the buffer.
+    *(was failing to set the checkpoint in this case).*
+
 - Version 0.3 (2020-03-03)
 
   - Support non-destructive commands between undo/redo actions without breaking the chain.
