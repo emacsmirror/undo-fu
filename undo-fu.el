@@ -33,8 +33,12 @@
 ;; lets you continue redoing for functionality not typically
 ;; accessible with regular undo/redo.
 ;;
+;; If you prefer [keyboard-quit] not interfere with undo behavior
+;; You may optionally set `undo-fu-ignore-keyboard-quit' & explicitly
+;; call `undo-fu-disable-checkpoint'.
+;;
 
-;;; Usage
+;;; Usage:
 
 ;; ;; Bind the keys
 ;; (global-unset-key (kbd "C-z"))
