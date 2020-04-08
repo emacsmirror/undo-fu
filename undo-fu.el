@@ -100,20 +100,28 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
   (setq undo-fu--in-region nil)
   (undo-fu--checkpoint-unset))
 
+(defmacro undo-fu--with-advice (fn-orig where fn-advice &rest body)
+  "Execute BODY with advice temporarily enabled."
+  `
+  (let ((fn-advice-var ,fn-advice))
+    (unwind-protect
+      (progn
+        (advice-add ,fn-orig ,where fn-advice-var)
+        ,@body)
+      (advice-remove ,fn-orig fn-advice-var))))
+
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
   "Add text after the message output.
-Argument SUFFIX is the text to add at the end of the message.
+Argument SUFFIX is the text to add at the start of the message.
 Optional argument BODY runs with the message suffix."
   (declare (indent 1))
-  (let ((message-orig (cl-gensym "--message-suffix-")))
-    `
-    (cl-letf*
-      (
-        (,message-orig (symbol-function 'message))
-        ((symbol-function 'message)
-          (lambda (arg &rest args)
-            (apply ,message-orig (append (list (concat arg "%s")) args (list ,suffix))))))
-      ,@body)))
+  `
+  (undo-fu--with-advice
+    'message
+    :around
+    (lambda (fn-orig arg &rest args)
+      (apply fn-orig (append (list (concat arg "%s")) args (list ,suffix))))
+    ,@body))
 
 (defun undo-fu--undo-enabled-or-error ()
   "Raise a user error when undo is disabled."
