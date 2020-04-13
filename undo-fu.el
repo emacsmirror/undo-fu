@@ -116,8 +116,7 @@ Argument SUFFIX is the text to add at the start of the message.
 Optional argument BODY runs with the message suffix."
   (declare (indent 1))
   `
-  (undo-fu--with-advice
-    'message
+  (undo-fu--with-advice 'message
     :around
     (lambda (fn-orig arg &rest args)
       (apply fn-orig (append (list (concat arg "%s")) args (list ,suffix))))
