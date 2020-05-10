@@ -5,6 +5,8 @@ Change Log
 
 - In development
 
+  - Undo in *unconstrained* mode no longer uses ``undo-only``,
+    matching redo behavior.
   - Raise an error when using undo commands when undo has been disabled for the buffer.
     *(was failing to set the checkpoint in this case).*
 

@@ -406,7 +406,7 @@ Optional argument ARG the number of steps to undo."
                 (if undo-fu--respect
                   ""
                   " (unconstrained)")
-                (if undo-fu--in-region
+                (if (or (not undo-fu--respect) undo-fu--in-region)
                   (undo steps)
                   (undo-only steps)))
               t)
