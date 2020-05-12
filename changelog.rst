@@ -5,6 +5,8 @@ Change Log
 
 - In development
 
+  - Fix undo checkpoint initialization when running for the first with existing undo data.
+    This could happen when running undo immediately upon loading a file with undo data from ``undo-fu-session``.
   - Undo in *unconstrained* mode no longer uses ``undo-only``,
     matching redo behavior.
   - Raise an error when using undo commands when undo has been disabled for the buffer.

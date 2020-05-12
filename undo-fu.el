@@ -358,6 +358,12 @@ Optional argument ARG the number of steps to undo."
           'undo-fu-disable-checkpoint
           'keyboard-quit)))
 
+    ;; Special case, for first execution, `was-undo-or-redo' may be true
+    ;; based on saved undo history, yet the `undo-fu--checkpoint' can be nil.
+    ;; In this case it's simplest to behave as if the last command was not undo.
+    (when (and was-undo-or-redo undo-fu--respect (null undo-fu--checkpoint))
+      (setq was-undo-or-redo nil))
+
     ;; Reset the option to not respect the checkpoint
     ;; after running non-undo related commands.
     (unless undo-fu--respect
