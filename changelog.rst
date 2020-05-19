@@ -5,6 +5,8 @@ Change Log
 
 - In development
 
+  - Fix continual redo in unconstrained mode trapping the user in a state
+    where neither undo or redo can be performed.
   - Fix undo checkpoint initialization when running for the first with existing undo data.
     This could happen when running undo immediately upon loading a file with undo data from ``undo-fu-session``.
   - Undo in *unconstrained* mode no longer uses ``undo-only``,

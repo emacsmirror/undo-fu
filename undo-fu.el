@@ -353,6 +353,7 @@ Optional argument ARG the number of steps to undo."
   (let*
     ( ;; Assign for convenience.
       (was-undo-or-redo (undo-fu--was-undo-or-redo))
+      (was-redo (and was-undo-or-redo undo-fu--was-redo))
       (undo-fu-quit-command
         (if undo-fu-ignore-keyboard-quit
           'undo-fu-disable-checkpoint
@@ -399,6 +400,15 @@ Optional argument ARG the number of steps to undo."
         (steps (or arg 1))
         (last-command
           (cond
+            ;; Special case, to avoid being locked out of the undo-redo chain.
+            ;; Without this, continuously redoing will end up in a state where undo & redo fails.
+            ;;
+            ;; Detect this case and break the chain. Only do this when previously redoing
+            ;; otherwise undo will reverse immediately once it reaches the beginning,
+            ;; which we don't want even when unconstrained,
+            ;; as we don't want to present the undo chain as infinite in either direction.
+            ((and was-redo (null undo-fu--respect) (eq t pending-undo-list))
+              'ignore)
             (was-undo-or-redo
               ;; Checked by the undo function.
               'undo)
