@@ -101,7 +101,7 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
   (undo-fu--checkpoint-unset))
 
 (defmacro undo-fu--with-advice (fn-orig where fn-advice &rest body)
-  "Execute BODY with advice temporarily enabled."
+  "Execute BODY with advice added WHERE using FN-ADVICE temporarily added to FN-ORIG."
   `
   (let ((fn-advice-var ,fn-advice))
     (unwind-protect
