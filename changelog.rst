@@ -3,12 +3,12 @@
 Change Log
 ##########
 
-- In development
+- Version 0.4 (2020-05-22)
 
+  - Back-port ``undo-redo`` from Emacs-28,
+    replace the redo logic with this function.
   - Fix continual redo in unconstrained mode trapping the user in a state
     where neither undo or redo can be performed.
-  - Fix undo checkpoint initialization when running for the first with existing undo data.
-    This could happen when running undo immediately upon loading a file with undo data from ``undo-fu-session``.
   - Undo in *unconstrained* mode no longer uses ``undo-only``,
     matching redo behavior.
   - Raise an error when using undo commands when undo has been disabled for the buffer.
