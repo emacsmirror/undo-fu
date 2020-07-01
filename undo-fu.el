@@ -76,6 +76,8 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
 ;; Track the last undo/redo direction.
 ;; Use in conjunction with `undo-fu--was-undo-or-redo' to ensure the value isn't stale.
 (defvar-local undo-fu--was-redo nil)
+;; List of interactive commands.
+(defvar-local undo-fu--commands '(undo-fu-only-undo undo-fu-only-redo-all undo-fu-only-redo undo-fu-disable-checkpoint))
 
 ;; ---------------------------------------------------------------------------
 ;; Back Port `undo-redo'
@@ -402,17 +404,13 @@ Optional argument ARG the number of steps to undo."
 ;; - Package lint complains about using this command,
 ;;   however it's needed to avoid issues with `evil-mode'.
 (declare-function evil-declare-not-repeat "ext:evil-common")
+(eval-after-load 'evil '(mapc #'evil-declare-not-repeat undo-fu--commands))
+
+;; `aggressive-indent-mode’ (setup if in use).
+(defvar aggressive-indent-protected-commands)
 (eval-after-load
-  'evil
-  '
-  (progn
-    (mapc
-      #'evil-declare-not-repeat
-      (list
-        'undo-fu-disable-checkpoint
-        'undo-fu-only-redo
-        'undo-fu-only-redo-all
-        'undo-fu-only-undo))))
+  'aggressive-indent
+  '(nconc aggressive-indent-protected-commands undo-fu--commands))
 
 (provide 'undo-fu)
 
