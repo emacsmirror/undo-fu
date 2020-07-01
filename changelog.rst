@@ -3,6 +3,9 @@
 Change Log
 ##########
 
+- Version 0.5 (in development)
+  - Protect against ``aggressive-indent-mode``.
+
 - Version 0.4 (2020-05-22)
 
   - Back-port ``undo-redo`` from Emacs-28,
