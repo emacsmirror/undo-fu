@@ -18,6 +18,8 @@ The changes compared Emacs undo are as follows:
 Note that this doesn't interfere with Emacs internal undo data,
 which can be error prone.
 
+Available via `melpa <https://melpa.org/#/undo-fu>`__.
+
 
 Motivation
 ==========
