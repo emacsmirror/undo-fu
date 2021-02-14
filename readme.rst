@@ -118,13 +118,16 @@ Combined with key bindings, for evil-mode:
      (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
 
 
-Undo Tree (Evil Mode)
----------------------
+Evil Mode
+---------
 
-At the time of writing undo-tree is enabled by default in evil-mode,
-This defines it's own undo data-structures and is not compatible with undo-fu,
+Evil mode can be configured to use ``undo-fu`` by default.
 
-When using evil-mode be sure to run ``(global-undo-tree-mode -1)`` to avoid problems.
+.. code-block:: elisp
+
+   (use-package evil
+     :init
+     (setq evil-undo-system 'undo-fu))
 
 
 Other Packages
