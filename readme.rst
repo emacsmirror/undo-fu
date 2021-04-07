@@ -63,20 +63,6 @@ Key binding example for typical ``Ctrl-Z``, ``Ctrl-Shift-Z`` keys:
    (global-set-key (kbd "C-S-z") 'undo-fu-only-redo)
 
 
-Details
--------
-
-- Holding the undo-key undoes all available actions.
-- Holding the redo-key redoes all actions until the first undo performed after an edit.
-- Redoing beyond this point is prevented, as you might expect since this is how undo/redo normally works,
-  this means you can conveniently hold the redo key to reach the newest state of the document.
-
-  If you want to keep redoing past this point
-  you're prompted to press ``Ctrl-G`` (``keyboard-quit``),
-  then you can continue to redo using Emacs default behavior
-  until a new chain of undo/redo events is started.
-
-
 Customization
 -------------
 
@@ -92,6 +78,20 @@ Customization
 
    This was added for users who prefer to explicitly activate this behavior.
    As ``keyboard-quit`` may be used for other reasons.
+
+
+Details
+=======
+
+- Holding the undo-key undoes all available actions.
+- Holding the redo-key redoes all actions until the first undo performed after an edit.
+- Redoing beyond this point is prevented, as you might expect since this is how undo/redo normally works,
+  this means you can conveniently hold the redo key to reach the newest state of the document.
+
+  If you want to keep redoing past this point
+  you're prompted to press ``Ctrl-G`` (``keyboard-quit``),
+  then you can continue to redo using Emacs default behavior
+  until a new chain of undo/redo events is started.
 
 
 Limitations
