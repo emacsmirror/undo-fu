@@ -77,7 +77,8 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
 ;; Use in conjunction with `undo-fu--was-undo-or-redo' to ensure the value isn't stale.
 (defvar-local undo-fu--was-redo nil)
 ;; List of interactive commands.
-(defvar-local undo-fu--commands '(undo-fu-only-undo undo-fu-only-redo-all undo-fu-only-redo undo-fu-disable-checkpoint))
+(defvar-local undo-fu--commands
+  '(undo-fu-only-undo undo-fu-only-redo-all undo-fu-only-redo undo-fu-disable-checkpoint))
 
 ;; ---------------------------------------------------------------------------
 ;; Back Port `undo-redo'
