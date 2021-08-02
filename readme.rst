@@ -109,15 +109,15 @@ The package is `available in melpa <https://melpa.org/#/undo-fu>`__ as ``undo-fu
 
    (use-package undo-fu)
 
-Combined with key bindings, for evil-mode:
+Combined with key bindings:
 
 .. code-block:: elisp
 
    (use-package undo-fu
      :config
-     (global-undo-tree-mode -1)
-     (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
-     (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo))
+     (global-unset-key (kbd "C-z"))
+     (global-set-key (kbd "C-z")   'undo-fu-only-undo)
+     (global-set-key (kbd "C-S-z") 'undo-fu-only-redo))
 
 
 Evil Mode
