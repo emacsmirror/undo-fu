@@ -119,7 +119,9 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
 ;; Internal Functions/Macros
 
 (defun undo-fu--checkpoint-disable ()
-  "Disable using the checkpoint, allowing the initial boundary to be crossed when redoing."
+  "Disable using the checkpoint.
+
+This allows the initial boundary to be crossed when redoing."
   (setq undo-fu--respect nil)
   (setq undo-fu--in-region nil))
 
