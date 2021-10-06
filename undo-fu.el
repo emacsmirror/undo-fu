@@ -6,7 +6,7 @@
 
 ;; URL: https://gitlab.com/ideasman42/emacs-undo-fu
 ;; Version: 0.4
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -50,18 +50,18 @@
 ;; ---------------------------------------------------------------------------
 ;; Custom Variables
 
+(defgroup undo-fu nil "Configure default behavior for undo-fu wrapper." :group 'convenience)
+
 (defcustom undo-fu-allow-undo-in-region nil
   "When t, use `undo-in-region' when a selection is present.
 Otherwise `undo-in-region' is never used, since it doesn't support `undo-only',
 causing undo-fu to work with reduced functionality when a selection exists."
-  :group 'undo-fu
   :type 'boolean)
 
 (defcustom undo-fu-ignore-keyboard-quit nil
   "When t, don't use `keyboard-quit' to disable linear undo/redo behavior.
 
 Instead, explicitly call `undo-fu-disable-checkpoint'."
-  :group 'undo-fu
   :type 'boolean)
 
 ;; ---------------------------------------------------------------------------
