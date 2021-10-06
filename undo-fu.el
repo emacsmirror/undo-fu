@@ -241,13 +241,14 @@ Optional argument ARG The number of steps to redo."
         (setq undo-fu--respect t)))
 
     (when (region-active-p)
-      (if undo-fu-allow-undo-in-region
-        (progn
+      (cond
+        (undo-fu-allow-undo-in-region
           (message "Undo in region in use. Undo checkpoint ignored!")
           (undo-fu--checkpoint-disable)
           (setq undo-fu--in-region t))
         ;; Default behavior, just remove selection.
-        (deactivate-mark)))
+        (t
+          (deactivate-mark))))
 
     ;; Allow crossing the boundary, if we press [keyboard-quit].
     ;; This allows explicitly over-stepping the boundary,
@@ -338,13 +339,14 @@ Optional argument ARG the number of steps to undo."
         (setq undo-fu--respect t)))
 
     (when (region-active-p)
-      (if undo-fu-allow-undo-in-region
-        (progn
+      (cond
+        (undo-fu-allow-undo-in-region
           (message "Undo in region in use. Undo checkpoint ignored!")
           (undo-fu--checkpoint-disable)
           (setq undo-fu--in-region t))
         ;; Default behavior, just remove selection.
-        (deactivate-mark)))
+        (t
+          (deactivate-mark))))
 
     ;; Allow crossing the boundary, if we press [keyboard-quit].
     ;; This allows explicitly over-stepping the boundary,
