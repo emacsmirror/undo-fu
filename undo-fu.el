@@ -50,7 +50,7 @@
 ;; ---------------------------------------------------------------------------
 ;; Custom Variables
 
-(defgroup undo-fu nil "Configure default behavior for undo-fu wrapper." :group 'convenience)
+(defgroup undo-fu nil "Configure default behavior for undo-fu wrapper." :group 'undo)
 
 (defcustom undo-fu-allow-undo-in-region nil
   "When t, use `undo-in-region' when a selection is present.
