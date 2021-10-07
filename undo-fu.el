@@ -126,7 +126,9 @@ This allows the initial boundary to be crossed when redoing."
   (setq undo-fu--in-region nil))
 
 (defmacro undo-fu--with-advice (fn-orig where fn-advice &rest body)
-  "Execute BODY with advice added WHERE using FN-ADVICE temporarily added to FN-ORIG."
+  "Execute BODY with advice added.
+
+WHERE using FN-ADVICE temporarily added to FN-ORIG."
   `
   (let ((fn-advice-var ,fn-advice))
     (unwind-protect
