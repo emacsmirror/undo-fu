@@ -66,13 +66,12 @@ Key binding example for typical ``Ctrl-Z``, ``Ctrl-Shift-Z`` keys:
 Customization
 -------------
 
-``undo-fu-allow-undo-in-region``
+``undo-fu-allow-undo-in-region`` (``nil``)
    This option exists for users who prefer to trade-off undo/redo functionality
    with the ability to limit undo to a region.
 
-   When this boolean is ``t``, undoing with a selection
-   will use undo within this region.
-``undo-fu-ignore-keyboard-quit``
+   When non-nil, undoing with a selection will use undo within this region.
+``undo-fu-ignore-keyboard-quit`` (``nil``)
    Don't use ``Ctrl-G`` (``keyboard-quit``) for non-linear behavior,
    instead, use the ``undo-fu-disable-checkpoint`` command.
 

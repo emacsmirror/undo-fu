@@ -53,13 +53,13 @@
 (defgroup undo-fu nil "Configure default behavior for undo-fu wrapper." :group 'undo)
 
 (defcustom undo-fu-allow-undo-in-region nil
-  "When t, use `undo-in-region' when a selection is present.
+  "When non-nil, use `undo-in-region' when a selection is present.
 Otherwise `undo-in-region' is never used, since it doesn't support `undo-only',
 causing undo-fu to work with reduced functionality when a selection exists."
   :type 'boolean)
 
 (defcustom undo-fu-ignore-keyboard-quit nil
-  "When t, don't use `keyboard-quit' to disable linear undo/redo behavior.
+  "When non-nil, don't use `keyboard-quit' to disable linear undo/redo behavior.
 
 Instead, explicitly call `undo-fu-disable-checkpoint'."
   :type 'boolean)
@@ -420,5 +420,4 @@ Optional argument ARG the number of steps to undo."
   '(nconc aggressive-indent-protected-commands undo-fu--commands))
 
 (provide 'undo-fu)
-
 ;;; undo-fu.el ends here
