@@ -176,11 +176,13 @@ since in this case `keyboard-quit' cannot be used
 to perform unconstrained undo/redo actions."
   (interactive)
   ;; Display an appropriate message.
-  (if (undo-fu--was-undo-or-redo)
-    (if (and undo-fu--respect)
-      (message "Undo checkpoint cleared!")
+  (cond
+    ((not (undo-fu--was-undo-or-redo))
+      (message "Undo checkpoint disabled for next undo action!"))
+    ((not undo-fu--respect)
       (message "Undo checkpoint already cleared!"))
-    (message "Undo checkpoint disabled for next undo action!"))
+    (t
+      (message "Undo checkpoint cleared!")))
 
   (undo-fu--checkpoint-disable))
 
