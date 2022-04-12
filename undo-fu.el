@@ -281,14 +281,13 @@ Optional argument ARG The number of steps to redo."
         (success
           (condition-case err
             (progn
-              (undo-fu--with-message-suffix
-                (if undo-fu--respect
-                  ""
-                  " (unconstrained)")
-                (if undo-fu--respect
-                  (undo-fu--backport-undo-redo steps)
-                  (let ((undo-no-redo nil))
-                    (undo steps))))
+              (cond
+                (undo-fu--respect
+                  (undo-fu--backport-undo-redo steps))
+                (t
+                  (undo-fu--with-message-suffix " (unconstrained)"
+                    (let ((undo-no-redo nil))
+                      (undo steps)))))
               t)
             (error
               (progn
@@ -372,14 +371,13 @@ Optional argument ARG the number of steps to undo."
         (success
           (condition-case err
             (progn
-              (undo-fu--with-message-suffix
-                (if undo-fu--respect
-                  ""
-                  " (unconstrained)")
-                (if (or (not undo-fu--respect) undo-fu--in-region)
-                  (let ((undo-no-redo nil))
-                    (undo steps))
-                  (undo-only steps)))
+              (cond
+                ((and undo-fu--respect (not undo-fu--in-region))
+                  (undo-only steps))
+                (t
+                  (undo-fu--with-message-suffix " (unconstrained)"
+                    (let ((undo-no-redo nil))
+                      (undo steps)))))
               t)
             (error
               (progn
