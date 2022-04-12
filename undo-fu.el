@@ -248,7 +248,7 @@ Optional argument ARG The number of steps to redo."
     ;; This allows explicitly over-stepping the boundary,
     ;; in cases when users want to bypass this constraint.
     (when undo-fu--respect
-      (when (member last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
+      (when (memq last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
         (undo-fu--checkpoint-disable)
         (message "Redo checkpoint stepped over!")))
 
@@ -350,7 +350,7 @@ Optional argument ARG the number of steps to undo."
     ;; This allows explicitly over-stepping the boundary,
     ;; in cases when users want to bypass this constraint.
     (when undo-fu--respect
-      (when (member last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
+      (when (memq last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
         (undo-fu--checkpoint-disable)
         (message "Undo checkpoint ignored!")))
 
