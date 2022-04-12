@@ -4,6 +4,7 @@ Change Log
 ##########
 
 - Version 0.5 (in development)
+  - Fix unconstrained undo when the user has ``undo-no-redo`` enabled.
   - Protect against ``aggressive-indent-mode``.
 
 - Version 0.4 (2020-05-22)

@@ -287,7 +287,8 @@ Optional argument ARG The number of steps to redo."
                   " (unconstrained)")
                 (if undo-fu--respect
                   (undo-fu--backport-undo-redo steps)
-                  (undo steps)))
+                  (let ((undo-no-redo nil))
+                    (undo steps))))
               t)
             (error
               (progn
@@ -376,7 +377,8 @@ Optional argument ARG the number of steps to undo."
                   ""
                   " (unconstrained)")
                 (if (or (not undo-fu--respect) undo-fu--in-region)
-                  (undo steps)
+                  (let ((undo-no-redo nil))
+                    (undo steps))
                   (undo-only steps)))
               t)
             (error
