@@ -403,17 +403,15 @@ Optional argument ARG the number of steps to undo."
 ;; Don't let these commands repeat.
 ;;
 ;; Notes:
-;; - Use `with-eval-after-load' once Emacs version 24.4 is the minimum supported version.
 ;; - Package lint complains about using this command,
 ;;   however it's needed to avoid issues with `evil-mode'.
 (declare-function evil-declare-not-repeat "ext:evil-common")
-(eval-after-load 'evil '(mapc #'evil-declare-not-repeat undo-fu--commands))
+(with-eval-after-load 'evil (mapc #'evil-declare-not-repeat undo-fu--commands))
 
-;; `aggressive-indent-mode’ (setup if in use).
+;; `aggressive-indent-mode' (setup if in use).
 (defvar aggressive-indent-protected-commands)
-(eval-after-load
-  'aggressive-indent
-  '(nconc aggressive-indent-protected-commands undo-fu--commands))
+(with-eval-after-load 'aggressive-indent
+  (nconc aggressive-indent-protected-commands undo-fu--commands))
 
 (provide 'undo-fu)
 ;;; undo-fu.el ends here
