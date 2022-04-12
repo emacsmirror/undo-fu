@@ -220,9 +220,11 @@ Optional argument ARG The number of steps to redo."
       (was-redo (and was-undo-or-redo undo-fu--was-redo))
       (was-undo (and was-undo-or-redo (null was-redo)))
       (undo-fu-quit-command
-        (if undo-fu-ignore-keyboard-quit
-          'undo-fu-disable-checkpoint
-          'keyboard-quit)))
+        (cond
+          (undo-fu-ignore-keyboard-quit
+            'undo-fu-disable-checkpoint)
+          (t
+            'keyboard-quit))))
 
     ;; Reset the option to not respect the checkpoint
     ;; after running non-undo related commands.
@@ -261,9 +263,11 @@ Optional argument ARG The number of steps to redo."
         ;; It's important to clamp the number of steps before assigning
         ;; 'last-command' since it's used when checking the available steps.
         (steps
-          (if (numberp arg)
-            arg
-            1))
+          (cond
+            ((numberp arg)
+              arg)
+            (t
+              1)))
         (last-command
           (cond
             (was-undo
@@ -318,9 +322,11 @@ Optional argument ARG the number of steps to undo."
       (was-undo-or-redo (undo-fu--was-undo-or-redo))
       (was-redo (and was-undo-or-redo undo-fu--was-redo))
       (undo-fu-quit-command
-        (if undo-fu-ignore-keyboard-quit
-          'undo-fu-disable-checkpoint
-          'keyboard-quit)))
+        (cond
+          (undo-fu-ignore-keyboard-quit
+            'undo-fu-disable-checkpoint)
+          (t
+            'keyboard-quit))))
 
     ;; Reset the option to not respect the checkpoint
     ;; after running non-undo related commands.
