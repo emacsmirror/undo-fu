@@ -83,7 +83,7 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
   (interactive "*p")
   (cond
     ((not (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))
-      (user-error "No undo to undo"))
+      (user-error "No undone changes to redo"))
     (t
       (let*
         (
@@ -92,7 +92,7 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
             (let ((undo-in-progress t))
               (while (and (consp ul) (eq (car ul) nil))
                 (setq ul (cdr ul)))
-              (primitive-undo arg ul)))
+              (primitive-undo (or arg 1) ul)))
           (new-pul (undo-fu--backport-undo--last-change-was-undo-p new-ul)))
         (message
           "Redo%s"
