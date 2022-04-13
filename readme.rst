@@ -47,13 +47,6 @@ Key Bindings
 
 You will need to map these to keys yourself.
 
-Key binding example for evil-mode:
-
-.. code-block:: elisp
-
-   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
-   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo)
-
 Key binding example for typical ``Ctrl-Z``, ``Ctrl-Shift-Z`` keys:
 
 .. code-block:: elisp
@@ -61,6 +54,8 @@ Key binding example for typical ``Ctrl-Z``, ``Ctrl-Shift-Z`` keys:
    (global-unset-key (kbd "C-z"))
    (global-set-key (kbd "C-z")   'undo-fu-only-undo)
    (global-set-key (kbd "C-S-z") 'undo-fu-only-redo)
+
+Evil mode now supports ``undo-fu``, setting ``evil-undo-system`` to ``'undo-fu`` uses evil-modes default bindings.
 
 
 Customization
@@ -129,6 +124,8 @@ Evil mode can be configured to use ``undo-fu`` by default.
    (use-package evil
      :init
      (setq evil-undo-system 'undo-fu))
+
+   (use-package undo-fu)
 
 
 Other Packages
