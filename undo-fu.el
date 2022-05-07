@@ -5,7 +5,7 @@
 
 ;; Author: Campbell Barton <ideasman42@gmail.com>
 
-;; URL: https://gitlab.com/ideasman42/emacs-undo-fu
+;; URL: https://codeberg.com/ideasman42/emacs-undo-fu
 ;; Version: 0.4
 ;; Package-Requires: ((emacs "25.1"))
 

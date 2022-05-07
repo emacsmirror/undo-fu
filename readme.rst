@@ -133,7 +133,7 @@ Other Packages
 
 As there are multiple packages which deal with undo, it's worth mentioning how this interacts with other packages.
 
-`Undo Fu Session <https://gitlab.com/ideasman42/emacs-undo-fu-session>`__
+`Undo Fu Session <https://codeberg.org/ideasman42/emacs-undo-fu-session>`__
    This package is intended for use with undo-fu,
    as a way to save and restore undo sessions, even after restarting Emacs.
 
