@@ -128,6 +128,30 @@ Evil mode can be configured to use ``undo-fu`` by default.
    (use-package undo-fu)
 
 
+Hints
+-----
+
+
+Undo Limits
+^^^^^^^^^^^
+
+The default undo limits for emacs are quite low _(0.15mb at time of writing)_
+``undo-tree`` for example increases these limits.
+
+On modern systems you may wish to use much higher limits.
+
+This example sets the limit to 64mb,
+1.5x (96mb) for the strong limit and
+10x (960mb) for the outer limit.
+_Emacs uses 100x for the outer limit but this may be too high when using increased limits._
+
+.. code-block:: elisp
+
+   (setq undo-limit 6710886400) ;; 64mb.
+   (setq undo-strong-limit 100663296) ;; 96mb.
+   (setq undo-outer-limit 1006632960) ;; 960mb.
+
+
 Other Packages
 ==============
 
