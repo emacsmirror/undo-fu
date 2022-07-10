@@ -6,7 +6,7 @@
 ;; Author: Campbell Barton <ideasman42@gmail.com>
 
 ;; URL: https://codeberg.org/ideasman42/emacs-undo-fu
-;; Version: 0.4
+;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
