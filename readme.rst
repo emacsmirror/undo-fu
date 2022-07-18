@@ -143,7 +143,7 @@ On modern systems you may wish to use much higher limits.
 This example sets the limit to 64mb,
 1.5x (96mb) for the strong limit and
 10x (960mb) for the outer limit.
-_Emacs uses 100x for the outer limit but this may be too high when using increased limits._
+*Emacs uses 100x for the outer limit but this may be too high when using increased limits.*
 
 .. code-block:: elisp
 
