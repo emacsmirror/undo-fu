@@ -167,7 +167,11 @@ As there are multiple packages which deal with undo, it's worth mentioning how t
    (``undo-fu-session`` is an improved alternative).
 
 `Undo Tree <https://www.emacswiki.org/emacs/UndoTree>`__
-   This handles undo steps as a tree by re-implementing parts of Emacs undo internals.
+   This package handles undo steps as a tree by re-implementing parts of Emacs undo internals.
 
    Undo-Fu was written to be a simpler alternative
    as Undo Tree had long standing unresolved bugs at the time of writing.
+
+`Vundo <https://github.com/casouri/vundo>`__
+   This package supports navigating undo as a tree structure and works well with undo-fu ``undo-fu-session``,
+   although there are no inter-dependencies as both packages operate on Emacs built-in undo.
