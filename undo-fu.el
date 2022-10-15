@@ -96,9 +96,11 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
           (new-pul (undo-fu--backport-undo--last-change-was-undo-p new-ul)))
         (message
           "Redo%s"
-          (if undo-in-region
-            " in region"
-            ""))
+          (cond
+            (undo-in-region
+              " in region")
+            (t
+              "")))
         (setq this-command 'undo)
         (setq pending-undo-list new-pul)
         (setq buffer-undo-list new-ul)))))
