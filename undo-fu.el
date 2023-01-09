@@ -211,17 +211,16 @@ Optional argument ARG The number of steps to redo."
   ;; Raise error since we can't do anything useful in this case.
   (undo-fu--undo-enabled-or-error)
 
-  (let*
-      ( ;; Assign for convenience.
-       (was-undo-or-redo (undo-fu--was-undo-or-redo))
-       (was-redo (and was-undo-or-redo undo-fu--was-redo))
-       (was-undo (and was-undo-or-redo (null was-redo)))
-       (undo-fu-quit-command
-        (cond
-         (undo-fu-ignore-keyboard-quit
-          'undo-fu-disable-checkpoint)
-         (t
-          'keyboard-quit))))
+  ;; Assign `was-undo-or-redo', `was-undo' & `was-undo' for convenience.
+  (let* ((was-undo-or-redo (undo-fu--was-undo-or-redo))
+         (was-redo (and was-undo-or-redo undo-fu--was-redo))
+         (was-undo (and was-undo-or-redo (null was-redo)))
+         (undo-fu-quit-command
+          (cond
+           (undo-fu-ignore-keyboard-quit
+            'undo-fu-disable-checkpoint)
+           (t
+            'keyboard-quit))))
 
     ;; Reset the option to not respect the checkpoint
     ;; after running non-undo related commands.
@@ -255,10 +254,9 @@ Optional argument ARG The number of steps to redo."
                     (substitute-command-keys
                      (format "\\[%s]" (symbol-name undo-fu-quit-command))))))
 
-    (let* (
-           ;; It's important to clamp the number of steps before assigning
-           ;; 'last-command' since it's used when checking the available steps.
-           (steps
+    (let* ((steps
+            ;; It's important to clamp the number of steps before assigning
+            ;; 'last-command' since it's used when checking the available steps.
             (cond
              ((numberp arg)
               arg)
@@ -313,16 +311,15 @@ Optional argument ARG the number of steps to undo."
   ;; Raise error since we can't do anything useful in this case.
   (undo-fu--undo-enabled-or-error)
 
-  (let*
-      ( ;; Assign for convenience.
-       (was-undo-or-redo (undo-fu--was-undo-or-redo))
-       (was-redo (and was-undo-or-redo undo-fu--was-redo))
-       (undo-fu-quit-command
-        (cond
-         (undo-fu-ignore-keyboard-quit
-          'undo-fu-disable-checkpoint)
-         (t
-          'keyboard-quit))))
+  ;; Assign `was-undo-or-redo' & `was-redo' for convenience.
+  (let* ((was-undo-or-redo (undo-fu--was-undo-or-redo))
+         (was-redo (and was-undo-or-redo undo-fu--was-redo))
+         (undo-fu-quit-command
+          (cond
+           (undo-fu-ignore-keyboard-quit
+            'undo-fu-disable-checkpoint)
+           (t
+            'keyboard-quit))))
 
     ;; Reset the option to not respect the checkpoint
     ;; after running non-undo related commands.
@@ -350,42 +347,41 @@ Optional argument ARG the number of steps to undo."
         (undo-fu--checkpoint-disable)
         (message "Undo checkpoint ignored!")))
 
-    (let*
-        ;; Swap in 'undo' for our own function name.
-        ;; Without this undo won't stop once the first undo step is reached.
-        ((steps (or arg 1))
-         (last-command
-          (cond
-           ;; Special case, to avoid being locked out of the undo-redo chain.
-           ;; Without this, continuously redoing will end up in a state where undo & redo fails.
-           ;;
-           ;; Detect this case and break the chain. Only do this when previously redoing
-           ;; otherwise undo will reverse immediately once it reaches the beginning,
-           ;; which we don't want even when unconstrained,
-           ;; as we don't want to present the undo chain as infinite in either direction.
-           ((and was-redo (null undo-fu--respect) (eq t pending-undo-list))
-            'ignore)
-           (was-undo-or-redo
-            ;; Checked by the undo function.
-            'undo)
-           (t
-            ;; No change.
-            last-command)))
-         (success
-          (condition-case err
-              (progn
-                (cond
-                 ((and undo-fu--respect (not undo-fu--in-region))
-                  (undo-only steps))
-                 (t
-                  (undo-fu--with-message-suffix " (unconstrained)"
-                    (let ((undo-no-redo nil))
-                      (undo steps)))))
-                t)
-            (error
-             (progn
-               (message "%s" (error-message-string err))
-               nil)))))
+    (let* ((steps (or arg 1))
+           ;; Swap in 'undo' for our own function name.
+           ;; Without this undo won't stop once the first undo step is reached.
+           (last-command
+            (cond
+             ;; Special case, to avoid being locked out of the undo-redo chain.
+             ;; Without this, continuously redoing will end up in a state where undo & redo fails.
+             ;;
+             ;; Detect this case and break the chain. Only do this when previously redoing
+             ;; otherwise undo will reverse immediately once it reaches the beginning,
+             ;; which we don't want even when unconstrained,
+             ;; as we don't want to present the undo chain as infinite in either direction.
+             ((and was-redo (null undo-fu--respect) (eq t pending-undo-list))
+              'ignore)
+             (was-undo-or-redo
+              ;; Checked by the undo function.
+              'undo)
+             (t
+              ;; No change.
+              last-command)))
+           (success
+            (condition-case err
+                (progn
+                  (cond
+                   ((and undo-fu--respect (not undo-fu--in-region))
+                    (undo-only steps))
+                   (t
+                    (undo-fu--with-message-suffix " (unconstrained)"
+                      (let ((undo-no-redo nil))
+                        (undo steps)))))
+                  t)
+              (error
+               (progn
+                 (message "%s" (error-message-string err))
+                 nil)))))
 
       (when success
         (setq undo-fu--was-redo nil))
