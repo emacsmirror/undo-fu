@@ -406,4 +406,8 @@ Optional argument ARG the number of steps to undo."
   (nconc aggressive-indent-protected-commands undo-fu--commands))
 
 (provide 'undo-fu)
+;; Local Variables:
+;; fill-column: 99
+;; indent-tabs-mode: nil
+;; End:
 ;;; undo-fu.el ends here
