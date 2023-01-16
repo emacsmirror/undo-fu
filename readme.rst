@@ -147,9 +147,9 @@ This example sets the limit to 64mb,
 
 .. code-block:: elisp
 
-   (setq undo-limit 6710886400) ;; 64mb.
-   (setq undo-strong-limit 100663296) ;; 96mb.
-   (setq undo-outer-limit 1006632960) ;; 960mb.
+   (setq undo-limit 671088640) ; 64mb.
+   (setq undo-strong-limit 100663296) ; 96mb.
+   (setq undo-outer-limit 1006632960) ; 960mb.
 
 
 Other Packages
