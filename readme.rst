@@ -173,5 +173,5 @@ As there are multiple packages which deal with undo, it's worth mentioning how t
    as Undo Tree had long standing unresolved bugs at the time of writing.
 
 `Vundo <https://github.com/casouri/vundo>`__
-   This package supports navigating undo as a tree structure and works well with undo-fu ``undo-fu-session``,
-   although there are no inter-dependencies as both packages operate on Emacs built-in undo.
+   This package supports navigating undo as a tree structure and works well with ``undo-fu`` & ``undo-fu-session``,
+   there are no inter-dependencies as both packages operate on Emacs built-in undo.
