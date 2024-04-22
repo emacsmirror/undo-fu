@@ -76,12 +76,14 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
 
 (defun undo-fu--backport-undo--last-change-was-undo-p (undo-list)
   "Return the last changed undo step in UNDO-LIST."
+  (declare (important-return-value t))
   (while (and (consp undo-list) (eq (car undo-list) nil))
     (setq undo-list (cdr undo-list)))
   (gethash undo-list undo-equiv-table))
 
 (defun undo-fu--backport-undo-redo (&optional arg)
   "Undo the last ARG undos."
+  (declare (important-return-value nil))
   (interactive "*p")
   (cond
    ((not (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))
@@ -111,6 +113,7 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
   "Disable using the checkpoint.
 
 This allows the initial boundary to be crossed when redoing."
+  (declare (important-return-value nil))
   (setq undo-fu--respect nil)
   (setq undo-fu--in-region nil))
 
@@ -155,11 +158,13 @@ Optional argument BODY runs with the message suffix."
 
 (defun undo-fu--undo-enabled-or-error ()
   "Raise a user error when undo is disabled."
+  (declare (important-return-value nil))
   (when (eq t buffer-undo-list)
     (user-error "Undo has been disabled!")))
 
 (defun undo-fu--was-undo-or-redo ()
   "Return t when the last destructive action was undo or redo."
+  (declare (important-return-value t))
   (not (null (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))))
 
 ;; ---------------------------------------------------------------------------
@@ -172,6 +177,7 @@ Optional argument BODY runs with the message suffix."
 This command is needed when `undo-fu-ignore-keyboard-quit' is t,
 since in this case `keyboard-quit' cannot be used
 to perform unconstrained undo/redo actions."
+  (declare (important-return-value nil))
   (interactive)
   ;; Display an appropriate message.
   (cond
@@ -189,6 +195,7 @@ to perform unconstrained undo/redo actions."
   "Redo all actions until the initial undo step.
 
 wraps the `undo' function."
+  (declare (important-return-value nil))
   (interactive "*")
   ;; Raise error since we can't do anything useful in this case.
   (undo-fu--undo-enabled-or-error)
@@ -208,6 +215,7 @@ wraps the `undo' function."
 wraps the `undo' function.
 
 Optional argument ARG The number of steps to redo."
+  (declare (important-return-value nil))
   (interactive "*p")
   ;; Raise error since we can't do anything useful in this case.
   (undo-fu--undo-enabled-or-error)
@@ -308,6 +316,7 @@ Optional argument ARG The number of steps to redo."
 wraps the `undo-only' function.
 
 Optional argument ARG the number of steps to undo."
+  (declare (important-return-value nil))
   (interactive "*p")
   ;; Raise error since we can't do anything useful in this case.
   (undo-fu--undo-enabled-or-error)
