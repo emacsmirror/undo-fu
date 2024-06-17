@@ -122,29 +122,39 @@ This allows the initial boundary to be crossed when redoing."
 
 Advice are triplets of (SYMBOL HOW FUNCTION),
 see `advice-add' documentation."
-  (declare (indent 3))
-  (let ((body-let nil)
+  (declare (indent 1))
+  (let ((advice-list advice)
+        (body-let nil)
         (body-advice-add nil)
         (body-advice-remove nil)
         (item nil))
-    (while (setq item (pop advice))
-      (let ((fn-sym (gensym))
-            (fn-advise (pop item))
-            (fn-advice-ty (pop item))
-            (fn-body (pop item)))
-        ;; Build the calls for each type.
-        (push (list fn-sym fn-body) body-let)
-        (push (list 'advice-add fn-advise fn-advice-ty fn-sym) body-advice-add)
-        (push (list 'advice-remove fn-advise fn-sym) body-advice-remove)))
-    (setq body-let (nreverse body-let))
-    (setq body-advice-add (nreverse body-advice-add))
-    ;; Compose the call.
-    `(let ,body-let
-       (unwind-protect
-           (progn
-             ,@body-advice-add
-             ,@body)
-         ,@body-advice-remove))))
+    (unless (listp advice-list)
+      (error "Advice must be a list"))
+    (cond
+     ((null advice-list)
+      (error "Advice must be a list containing at least one item"))
+     (t
+      (while (setq item (pop advice-list))
+        (unless (and (listp item) (eq 3 (length item)))
+          (error "Each advice must be a list of 3 items"))
+        (let ((fn-sym (gensym))
+              (fn-advise (pop item))
+              (fn-advice-ty (pop item))
+              (fn-body (pop item)))
+          ;; Build the calls for each type.
+          (push (list fn-sym fn-body) body-let)
+          (push (list 'advice-add fn-advise fn-advice-ty fn-sym) body-advice-add)
+          (push (list 'advice-remove fn-advise fn-sym) body-advice-remove)))
+      (setq body-let (nreverse body-let))
+      (setq body-advice-add (nreverse body-advice-add))
+
+      ;; Compose the call.
+      `(let ,body-let
+         (unwind-protect
+             (progn
+               ,@body-advice-add
+               ,@body)
+           ,@body-advice-remove))))))
 
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
   "Add text after the message output.
@@ -156,7 +166,7 @@ Optional argument BODY runs with the message suffix."
                            (lambda (fn-orig arg &rest args)
                              (apply fn-orig
                                     (append (list (concat arg "%s")) args (list ,suffix))))))
-       ,@body))
+     ,@body))
 
 (defmacro undo-fu--with-messages-as-non-repeating-list (message-list &rest body)
   "Run BODY adding any message call to the MESSAGE-LIST list."
@@ -169,11 +179,11 @@ Optional argument BODY runs with the message suffix."
                                  (let ((message-text (apply #'format-message args)))
                                    (unless (equal message-text (car temp-message-list))
                                      (push message-text temp-message-list)))))))
-         (unwind-protect
-             (progn
-               ,@body)
-           ;; Protected.
-           (setq ,message-list (append ,message-list (reverse temp-message-list)))))))
+       (unwind-protect
+           (progn
+             ,@body)
+         ;; Protected.
+         (setq ,message-list (append ,message-list (reverse temp-message-list)))))))
 
 (defun undo-fu--undo-enabled-or-error ()
   "Raise a user error when undo is disabled."
