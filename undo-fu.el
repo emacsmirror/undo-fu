@@ -428,6 +428,18 @@ Optional argument ARG the number of steps to undo."
       (setq this-command 'undo-fu-only-undo)
       success)))
 
+;; ---------------------------------------------------------------------------
+;; Public Functions (Extra Utilities)
+
+;;;###autoload
+(defun undo-fu-clear-all ()
+  "Clear all undo/redo steps."
+  (interactive)
+  (setq buffer-undo-list nil)
+  (setq pending-undo-list nil)
+  (clrhash undo-equiv-table))
+
+
 ;; Evil Mode (setup if in use)
 ;;
 ;; Don't let these commands repeat.

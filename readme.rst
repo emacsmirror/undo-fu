@@ -40,6 +40,7 @@ This package exposes the following functions:
 - ``undo-fu-only-redo``
 - ``undo-fu-only-redo-all``
 - ``undo-fu-disable-checkpoint`` (only needed when ``undo-fu-ignore-keyboard-quit`` is in use).
+- ``undo-fu-clear-all`` clear all undo/redo history.
 
 
 Key Bindings

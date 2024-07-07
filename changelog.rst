@@ -3,6 +3,9 @@
 Change Log
 ##########
 
+- In development.
+  - Add ``undo-fu-clear-all`` to delete all undo history.
+
 - Version 0.5 (2022-07-10)
   - Fix unconstrained undo when the user has ``undo-no-redo`` enabled.
   - Protect against ``aggressive-indent-mode``.
