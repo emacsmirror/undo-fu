@@ -183,7 +183,7 @@ Optional argument BODY runs with the message suffix."
            (progn
              ,@body)
          ;; Protected.
-         (setq ,message-list (append ,message-list (reverse temp-message-list)))))))
+         (setq ,message-list (append ,message-list (nreverse temp-message-list)))))))
 
 (defun undo-fu--undo-enabled-or-error ()
   "Raise a user error when undo is disabled."
