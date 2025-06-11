@@ -194,7 +194,11 @@ Optional argument BODY runs with the message suffix."
 (defun undo-fu--was-undo-or-redo ()
   "Return t when the last destructive action was undo or redo."
   (declare (important-return-value t))
-  (not (null (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))))
+  (cond
+   ((undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list)
+    t)
+   (t
+    nil)))
 
 ;; ---------------------------------------------------------------------------
 ;; Public Functions
