@@ -86,7 +86,7 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
   (declare (important-return-value nil))
   (interactive "*p")
   (cond
-   ((not (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))
+   ((null (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))
     (user-error "No undone changes to redo"))
    (t
     (let* ((ul buffer-undo-list)
@@ -214,9 +214,9 @@ to perform unconstrained undo/redo actions."
   (interactive)
   ;; Display an appropriate message.
   (cond
-   ((not (undo-fu--was-undo-or-redo))
+   ((null (undo-fu--was-undo-or-redo))
     (message "Undo checkpoint disabled for next undo action!"))
-   ((not undo-fu--respect)
+   ((null undo-fu--respect)
     (message "Undo checkpoint already cleared!"))
    (t
     (message "Undo checkpoint cleared!")))
@@ -414,7 +414,7 @@ Optional argument ARG the number of steps to undo."
             (condition-case err
                 (progn
                   (cond
-                   ((and undo-fu--respect (not undo-fu--in-region))
+                   ((and undo-fu--respect (null undo-fu--in-region))
                     (undo-only steps))
                    (t
                     (undo-fu--with-message-suffix " (unconstrained)"
