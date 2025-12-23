@@ -312,7 +312,7 @@ Optional argument ARG The number of steps to redo."
              (was-redo
               ;; Checked by the undo function.
               'undo)
-             ((string-equal last-command 'keyboard-quit)
+             ((eq last-command 'keyboard-quit)
               ;; This case needs to be explicitly detected.
               ;; If we undo until there is no undo information left,
               ;; then press `keyboard-quit' and redo, it fails without this case.
