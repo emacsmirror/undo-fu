@@ -459,7 +459,8 @@ Optional argument ARG the number of steps to undo."
 ;; `aggressive-indent-mode' (setup if in use).
 (defvar aggressive-indent-protected-commands)
 (with-eval-after-load 'aggressive-indent
-  (nconc aggressive-indent-protected-commands undo-fu--commands))
+  (setq aggressive-indent-protected-commands
+        (append aggressive-indent-protected-commands undo-fu--commands)))
 
 (provide 'undo-fu)
 ;; Local Variables:
