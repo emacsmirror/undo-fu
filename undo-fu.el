@@ -439,9 +439,10 @@ Optional argument ARG the number of steps to undo."
 (defun undo-fu-clear-all ()
   "Clear all undo/redo steps."
   (interactive)
+  ;; NOTE: don't touch `undo-equiv-table' as this is global,
+  ;; since it uses weak references, clearing these values is sufficient.
   (setq buffer-undo-list nil)
-  (setq pending-undo-list nil)
-  (clrhash undo-equiv-table))
+  (setq pending-undo-list nil))
 
 
 ;; Evil Mode (setup if in use)
