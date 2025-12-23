@@ -17,7 +17,7 @@
 ;; and stops redoing once the initial undo action is reached.
 ;;
 ;; If you want to cross the initial undo boundary to access
-;; the full history, running [keyboard-quit] (typically C-g).
+;; the full history, running [keyboard-quit] (typically C-g)
 ;; lets you continue redoing for functionality not typically
 ;; accessible with regular undo/redo.
 ;;
@@ -72,10 +72,11 @@ Instead, explicitly call `undo-fu-disable-checkpoint'."
 
 ;; ---------------------------------------------------------------------------
 ;; Back Port `undo-redo'
-;; Emacs 28's `undo-redo back-ported into undo-fu
+;; Emacs 28's `undo-redo' back-ported into undo-fu.
 
 (defun undo-fu--backport-undo--last-change-was-undo-p (undo-list)
-  "Return the last changed undo step in UNDO-LIST."
+  "Return the last changed undo state for UNDO-LIST, or nil if none.
+This checks if UNDO-LIST represents a state that resulted from an undo."
   (declare (important-return-value t))
   (while (and (consp undo-list) (eq (car undo-list) nil))
     (setq undo-list (cdr undo-list)))
@@ -158,7 +159,7 @@ see `advice-add' documentation."
 
 (defmacro undo-fu--with-message-suffix (suffix &rest body)
   "Add text after the message output.
-Argument SUFFIX is the text to add at the start of the message.
+Argument SUFFIX is the text to add at the end of the message.
 Optional argument BODY runs with the message suffix."
   (declare (indent 1))
   `(undo-fu--with-advice ((#'message
@@ -227,7 +228,7 @@ to perform unconstrained undo/redo actions."
 (defun undo-fu-only-redo-all ()
   "Redo all actions until the initial undo step.
 
-wraps the `undo' function."
+Wraps the `undo' function."
   (declare (important-return-value nil))
   (interactive "*")
   ;; Raise error since we can't do anything useful in this case.
@@ -245,7 +246,7 @@ wraps the `undo' function."
 (defun undo-fu-only-redo (&optional arg)
   "Redo an action until the initial undo action.
 
-wraps the `undo' function.
+Wraps the `undo' function.
 
 Optional argument ARG The number of steps to redo."
   (declare (important-return-value nil))
@@ -253,7 +254,7 @@ Optional argument ARG The number of steps to redo."
   ;; Raise error since we can't do anything useful in this case.
   (undo-fu--undo-enabled-or-error)
 
-  ;; Assign `was-undo-or-redo', `was-undo' & `was-undo' for convenience.
+  ;; Assign `was-undo-or-redo', `was-redo' & `was-undo' for convenience.
   (let* ((was-undo-or-redo (undo-fu--was-undo-or-redo))
          (was-redo (and was-undo-or-redo undo-fu--was-redo))
          (was-undo (and was-undo-or-redo (null was-redo)))
@@ -332,9 +333,8 @@ Optional argument ARG The number of steps to redo."
                         (undo steps)))))
                   t)
               (error
-               (progn
-                 (message "%s" (error-message-string err))
-                 nil)))))
+               (message "%s" (error-message-string err))
+               nil))))
 
       (when success
         (setq undo-fu--was-redo t))
@@ -346,7 +346,7 @@ Optional argument ARG The number of steps to redo."
 (defun undo-fu-only-undo (&optional arg)
   "Undo the last action.
 
-wraps the `undo-only' function.
+Wraps the `undo-only' function.
 
 Optional argument ARG the number of steps to undo."
   (declare (important-return-value nil))
@@ -422,9 +422,8 @@ Optional argument ARG the number of steps to undo."
                         (undo steps)))))
                   t)
               (error
-               (progn
-                 (message "%s" (error-message-string err))
-                 nil)))))
+               (message "%s" (error-message-string err))
+               nil))))
 
       (when success
         (setq undo-fu--was-redo nil))
