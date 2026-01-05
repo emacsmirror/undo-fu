@@ -45,7 +45,7 @@
 (defcustom undo-fu-allow-undo-in-region nil
   "When non-nil, use `undo-in-region' when a selection is present.
 Otherwise `undo-in-region' is never used, since it doesn't support `undo-only',
-causing undo-fu to work with reduced functionality when a selection exists."
+causing redo to run without constraints when a selection exists."
   :type 'boolean)
 
 (defcustom undo-fu-ignore-keyboard-quit nil
