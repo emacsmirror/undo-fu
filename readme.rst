@@ -4,11 +4,11 @@ Undo Fu
 
 Simple, stable linear undo with redo for Emacs.
 
-This is a light weight wrapper for Emacs built-in undo system,
+This is a lightweight wrapper for Emacs built-in undo system,
 adding convenient undo/redo without losing access to the full undo history,
 allowing you to visit all previous states of the document if you need.
 
-The changes compared Emacs undo are as follows:
+The changes compared to Emacs undo are as follows:
 
 - Redo will not pass the initial undo action.
 - Redo will not undo *(unlike Emacs redo which traverses previous undo/redo steps)*.
@@ -136,14 +136,14 @@ Hints
 Undo Limits
 ^^^^^^^^^^^
 
-The default undo limits for emacs are quite low _(0.15mb at time of writing)_
+The default undo limits for emacs are quite low *(0.15 MB at time of writing)*
 ``undo-tree`` for example increases these limits.
 
 On modern systems you may wish to use much higher limits.
 
 This example sets the limit to 64mb,
 1.5x (96mb) for the strong limit and
-10x (960mb) for the outer limit.
+15x (960mb) for the outer limit.
 *Emacs uses 100x for the outer limit but this may be too high when using increased limits.*
 
 .. code-block:: elisp
@@ -163,7 +163,7 @@ As there are multiple packages which deal with undo, it's worth mentioning how t
    as a way to save and restore undo sessions, even after restarting Emacs.
 
 `Undohist <https://github.com/emacsorphanage/undohist>`__
-   This packages stores undo data between sessions,
+   This package stores undo data between sessions,
    while it is compatible with undo-fu on a basic level, it doesn't store redo information
    (``undo-fu-session`` is an improved alternative).
 
