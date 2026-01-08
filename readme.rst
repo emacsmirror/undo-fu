@@ -73,6 +73,11 @@ Customization
 
    This was added for users who prefer to explicitly activate this behavior.
    As ``keyboard-quit`` may be used for other reasons.
+``undo-fu-trim`` (``t``)
+   Remove undo-equiv-table entries consumed by redo.
+
+   Without this, undoing and redoing accumulates entries in the undo history,
+   causing the number of steps to grow even though the buffer content is unchanged.
 
 
 Details

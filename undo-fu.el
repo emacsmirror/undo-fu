@@ -54,6 +54,12 @@ causing redo to run without constraints when a selection exists."
 Instead, explicitly call `undo-fu-disable-checkpoint'."
   :type 'boolean)
 
+(defcustom undo-fu-trim t
+  "When non-nil, remove `undo-equiv-table' entries consumed by redo.
+Without this, undoing and redoing accumulates entries in the undo history,
+causing the number of steps to grow even though the buffer content is unchanged."
+  :type 'boolean)
+
 ;; ---------------------------------------------------------------------------
 ;; Internal Variables
 
@@ -107,8 +113,53 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
       (setq pending-undo-list new-pul)
       (setq buffer-undo-list new-ul)))))
 
+(defun undo-fu--backport-undo-redo-with-trim (&optional arg)
+  "Call `undo-fu--backport-undo-redo', trimming `undo-equiv-table' when enabled."
+  (declare (important-return-value nil))
+  (let ((ul buffer-undo-list))
+    ;; Skip leading nils to find the equiv-table key
+    ;; (mirrors the nil-skip in `undo-fu--backport-undo-redo').
+    (while (and (consp ul) (null (car ul)))
+      (setq ul (cdr ul)))
+    (undo-fu--backport-undo-redo arg)
+    (when undo-fu-trim
+      (undo-fu--trim-undo-equiv-table ul buffer-undo-list (or arg 1)))))
+
+
 ;; ---------------------------------------------------------------------------
 ;; Internal Functions/Macros
+
+(defun undo-fu--trim-undo-equiv-table (ul new-ul steps)
+  "Remove `undo-equiv-table' entries consumed by redo so undo+redo cancels out."
+  (declare (important-return-value nil))
+  ;; UL is the nils-skipped head of the old `buffer-undo-list' (the start point
+  ;; passed to `primitive-undo').  NEW-UL is the remaining tail returned by
+  ;; `primitive-undo'.  STEPS is the requested number of redo steps.
+  ;;
+  ;; While the requested step count is known, `primitive-undo' may process fewer
+  ;; groups than requested, so we can't rely on it.  Instead, count the groups
+  ;; actually processed: the nil-separated groups between UL and NEW-UL,
+  ;; capped at STEPS.
+  (let ((consumed 0)
+        (scan ul)
+        (in-group nil))
+    (while (and (consp scan) (not (eq scan new-ul)) (< consumed steps))
+      (cond
+       ((null (car scan))
+        (setq in-group nil))
+       ((null in-group)
+        (setq in-group t)
+        (setq consumed (1+ consumed))))
+      (setq scan (cdr scan)))
+    ;; Walk the equiv-table chain, removing exactly `consumed' entries.
+    (let ((k ul))
+      (dotimes (_ consumed)
+        (let ((v (gethash k undo-equiv-table)))
+          (remhash k undo-equiv-table)
+          (when (consp v)
+            (setq k v)
+            (while (and (consp k) (null (car k)))
+              (setq k (cdr k)))))))))
 
 (defun undo-fu--checkpoint-disable ()
   "Disable using the checkpoint.
@@ -236,7 +287,7 @@ Wraps the `undo' function."
   (let ((message-list (list)))
     (undo-fu--with-messages-as-non-repeating-list message-list
       (while (undo-fu--was-undo-or-redo)
-        (undo-fu--backport-undo-redo 1)))
+        (undo-fu--backport-undo-redo-with-trim 1)))
     (dolist (message-text message-list)
       (message "%s All" message-text)))
   (setq this-command 'undo-fu-only-redo)
@@ -326,7 +377,7 @@ Optional argument ARG The number of steps to redo."
                 (progn
                   (cond
                    (undo-fu--respect
-                    (undo-fu--backport-undo-redo steps))
+                    (undo-fu--backport-undo-redo-with-trim steps))
                    (t
                     (undo-fu--with-message-suffix " (unconstrained)"
                       (let ((undo-no-redo nil))
