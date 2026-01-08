@@ -121,7 +121,7 @@ This allows the initial boundary to be crossed when redoing."
 (defmacro undo-fu--with-advice (advice &rest body)
   "Execute BODY with ADVICE temporarily enabled.
 
-Advice are triplets of (SYMBOL HOW FUNCTION),
+Each advice is a triplet of (SYMBOL HOW FUNCTION),
 see `advice-add' documentation."
   (declare (indent 1))
   (let ((advice-list advice)
