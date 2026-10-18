@@ -168,6 +168,19 @@ Messages are captured and not displayed."
                 ,@body)
          (kill-buffer buf)))))
 
+(defmacro with-undo-fu-test-without-gc (initial-buffer-text &rest body)
+  "Run `with-undo-fu-test' with INITIAL-BUFFER-TEXT & BODY, without garbage collection.
+
+Use for tests calling `undo-fu-test-count-undo-steps',
+as garbage collection removes the entries it counts."
+  (declare (indent 1))
+  ;; With `undo-fu-trim' disabled the count would be too low,
+  ;; when enabled it would hide entries trimming failed to remove.
+  ;; Other tests run with garbage collection, as it runs for users.
+  `(let ((gc-cons-threshold most-positive-fixnum))
+     (with-undo-fu-test ,initial-buffer-text
+       ,@body)))
+
 ;; Suppress bell during tests.
 (setq ring-bell-function #'ignore)
 
@@ -241,7 +254,7 @@ because there is nothing left to redo."
 Write 3 words, undo 3 times, redo 3 times.
 Each undo adds a step; each redo removes one (with `undo-fu-trim' enabled,
 the consumed `undo-equiv-table' entry is removed so the count decreases)."
-  (with-undo-fu-test ""
+  (with-undo-fu-test-without-gc ""
     ;; Write 3 words as separate actions.
     (simulate-input
       "aaa")
@@ -287,7 +300,7 @@ After undoing and redoing the same number of steps, the buffer content
 is restored and the unconstrained step count should be unchanged.
 With `undo-fu-trim' enabled, consumed `undo-equiv-table' entries are
 removed during redo, so undo+redo pairs cancel out cleanly."
-  (with-undo-fu-test ""
+  (with-undo-fu-test-without-gc ""
     ;; Write 3 words as separate actions.
     (simulate-input
       "aaa")
@@ -322,7 +335,7 @@ Starting from a partially undone state, redoing then undoing the same
 number of steps should restore both buffer content and step count.
 With `undo-fu-trim' enabled, consumed `undo-equiv-table' entries are
 removed during redo, so redo+undo pairs cancel out cleanly."
-  (with-undo-fu-test ""
+  (with-undo-fu-test-without-gc ""
     ;; Write 3 words, then undo 3 to create redo-able state.
     (simulate-input
       "aaa")
@@ -358,7 +371,7 @@ removed during redo, so redo+undo pairs cancel out cleanly."
 Write 3 words, undo only 1, redo only 1.  The buffer content and
 unconstrained step count should be unchanged, verifying that trim
 works for partial cycles (not just exhaustive ones)."
-  (with-undo-fu-test ""
+  (with-undo-fu-test-without-gc ""
     (simulate-input
       "aaa")
     (simulate-input
@@ -383,7 +396,7 @@ works for partial cycles (not just exhaustive ones)."
 Write 3 words, then repeat (undo 3, redo 3) three times.  The step
 count should remain the same after each cycle, verifying that trim
 is stable and idempotent over multiple rounds."
-  (with-undo-fu-test ""
+  (with-undo-fu-test-without-gc ""
     (simulate-input
       "aaa")
     (simulate-input
@@ -417,7 +430,7 @@ is stable and idempotent over multiple rounds."
 Write 2 words, undo 1 + redo 1 (cancel), write a 3rd word,
 undo 1 + redo 1 (cancel).  The step count should be correct after
 each cycle, verifying that trim works when new edits are interspersed."
-  (with-undo-fu-test ""
+  (with-undo-fu-test-without-gc ""
     (simulate-input
       "aaa")
     (simulate-input
@@ -646,7 +659,7 @@ for `undo-fu-only-redo'."
 
 When `undo-fu-trim' is nil, `undo-equiv-table' entries are preserved
 during redo, so each redo adds a step rather than canceling one out."
-  (with-undo-fu-test ""
+  (with-undo-fu-test-without-gc ""
     (let ((undo-fu-trim nil))
       (simulate-input
         "aaa")
