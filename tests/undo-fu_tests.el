@@ -765,6 +765,98 @@ With `undo-fu-trim' enabled, the history entry count returns to 3
     (should (equal "aaa bbb ccc" (buffer-string)))
     (should (equal 3 (undo-fu-test-count-history-entries)))))
 
+(defun undo-fu-test--trim-stress-log (trim seed steps)
+  "Run STEPS random actions from SEED with `undo-fu-trim' set to TRIM.
+Return a log of each action with the resulting buffer text (or error),
+followed by the texts reached when undoing all the way back.
+
+Also check redo-all returns to the text of the last edit,
+unless an unconstrained action ran since that edit."
+  (with-undo-fu-test ""
+    (let ((undo-fu-trim trim)
+          (log (list))
+          (word 0)
+          ;; The text after the last edit, nil after an unconstrained action.
+          (text-edit ""))
+      (random seed)
+      (dotimes (_ steps)
+        (let* ((n (1+ (random 3)))
+               (action (random 10))
+               (keys
+                (pcase action
+                  ((or 0 1)
+                   (setq word (1+ word))
+                   (format " w%d" word))
+                  ((or 2 3 4) (vconcat [?\C-u] (number-to-string n) undo-fu-test-key-undo))
+                  ((or 5 6 7) (vconcat [?\C-u] (number-to-string n) undo-fu-test-key-redo))
+                  (8 undo-fu-test-key-redo-all)
+                  (9
+                   ;; Unconstrained, in a single key-macro so `last-command' is
+                   ;; `undo-fu-disable-checkpoint' when undo/redo runs.
+                   (vconcat
+                    undo-fu-test-key-disable-checkpoint
+                    (cond
+                     ((zerop (random 2))
+                      undo-fu-test-key-undo)
+                     (t
+                      undo-fu-test-key-redo)))))))
+          (push (cons
+                 keys
+                 (condition-case err
+                     (progn
+                       (execute-kbd-macro keys)
+                       (buffer-string))
+                   (error
+                    (list 'error (error-message-string err)))))
+                log)
+          (pcase action
+            ((or 0 1) (setq text-edit (buffer-string)))
+            (8
+             ;; Redo-all stops at the initial undo, neither before (keeping changes undone)
+             ;; or after (undoing changes made before the undo started).
+             (when text-edit
+               (should (equal text-edit (buffer-string)))))
+            (9 (setq text-edit nil)))))
+      ;; Edit so the next undo starts a new (constrained) chain,
+      ;; otherwise an unconstrained action above may still be in effect.
+      (simulate-input
+        " end")
+      ;; Undo all the way back, recording each state.
+      ;; Each action adds at most one step to undo, limit the number of undo steps
+      ;; so a regression that alternates between states fails instead of hanging.
+      ;;
+      ;; NOTE: don't stop once undo leaves the text unchanged,
+      ;; as this happens for steps which don't change the text.
+      (let ((limit (+ steps 3)))
+        (while (progn
+                 (setq undo-fu-test--captured-messages nil)
+                 (simulate-input
+                   undo-fu-test-key-undo)
+                 (push (buffer-string) log)
+                 (setq limit (1- limit))
+                 (and (not (member "No further undo information" undo-fu-test--captured-messages))
+                      (> limit 0))))
+        (should (> limit 0)))
+      (nreverse log))))
+
+(ert-deftest undo-fu-test-trim-stress ()
+  "Check trimming doesn't change the behavior of undo/redo.
+
+Run the same random sequence of edits, (multi-step) undo/redo, redo-all
+and unconstrained undo/redo with `undo-fu-trim' enabled and disabled.
+Verifies the buffer text after every action is identical, that redo-all
+returns to the last edit and that (after an edit) undoing all the way back
+reaches the initial (empty) state."
+  (unwind-protect
+      (dolist (seed '("a" "b" "c" "d" "e" "f" "g" "h"))
+        (let ((log-trim (undo-fu-test--trim-stress-log t seed 300))
+              (log-no-trim (undo-fu-test--trim-stress-log nil seed 300)))
+          (should (equal log-no-trim log-trim))
+          (should (equal "" (car (last log-trim))))))
+    ;; Emacs can't restore the previous random state,
+    ;; reseed so tests which run after this don't use a fixed sequence.
+    (random t)))
+
 (ert-deftest undo-fu-test-trim-disabled-history-entry-count-grows ()
   "Check redo increases the history entry count with `undo-fu-trim' disabled.
 
