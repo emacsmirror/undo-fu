@@ -169,6 +169,17 @@ This allows the initial boundary to be crossed when redoing."
   (setq undo-fu--respect nil)
   (setq undo-fu--in-region nil))
 
+(defun undo-fu--checkpoint-reset-when-stale (was-undo-or-redo)
+  "Respect the checkpoint again when the last change wasn't an undo or redo.
+WAS-UNDO-OR-REDO is the result of `undo-fu--was-undo-or-redo'.
+
+This resets the checkpoint after running non-undo related commands."
+  (declare (important-return-value nil))
+  (unless (or undo-fu--respect was-undo-or-redo)
+    (when undo-fu-allow-undo-in-region
+      (setq undo-fu--in-region nil))
+    (setq undo-fu--respect t)))
+
 (defmacro undo-fu--with-advice (advice &rest body)
   "Execute BODY with ADVICE temporarily enabled.
 
@@ -316,13 +327,7 @@ Optional argument ARG The number of steps to redo."
            (t
             'keyboard-quit))))
 
-    ;; Reset the option to not respect the checkpoint
-    ;; after running non-undo related commands.
-    (unless undo-fu--respect
-      (unless was-undo-or-redo
-        (when undo-fu-allow-undo-in-region
-          (setq undo-fu--in-region nil))
-        (setq undo-fu--respect t)))
+    (undo-fu--checkpoint-reset-when-stale was-undo-or-redo)
 
     (when (region-active-p)
       (cond
@@ -415,13 +420,7 @@ Optional argument ARG the number of steps to undo."
            (t
             'keyboard-quit))))
 
-    ;; Reset the option to not respect the checkpoint
-    ;; after running non-undo related commands.
-    (unless undo-fu--respect
-      (unless was-undo-or-redo
-        (when undo-fu-allow-undo-in-region
-          (setq undo-fu--in-region nil))
-        (setq undo-fu--respect t)))
+    (undo-fu--checkpoint-reset-when-stale was-undo-or-redo)
 
     (when (region-active-p)
       (cond
