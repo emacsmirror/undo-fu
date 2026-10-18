@@ -762,6 +762,36 @@ and the second fails, which is shown as a message instead of an error."
       "Changes to be undone are outside visible portion of buffer"
       undo-fu-test--captured-messages))))
 
+(ert-deftest undo-fu-test-redo-all-partial-failure ()
+  "Redo-all where a later step fails, keeping the steps redone.
+
+Edit the end then the start of the buffer, undo both, then narrow the buffer
+to exclude the start.  Redo-all redoes the first step and raises the error
+of the second, without the message which would show all steps were redone."
+  (with-undo-fu-test "hello"
+    (goto-char (point-max))
+    (simulate-input
+      "X")
+    (goto-char (point-min))
+    (simulate-input
+      "Y")
+    (should (equal "YhelloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))
+    (narrow-to-region 2 (point-max))
+    (setq undo-fu-test--captured-messages nil)
+    (should-error-with-message
+        (simulate-input
+          undo-fu-test-key-redo-all)
+      'error
+      "Changes to be undone are outside visible portion of buffer")
+    (widen)
+    (should (equal "helloX" (buffer-string)))
+    (should-not (member "Redo All" undo-fu-test--captured-messages))))
+
 (ert-deftest undo-fu-test-redo-zero-steps ()
   "Redo zero steps via C-u 0, redoing nothing.
 
