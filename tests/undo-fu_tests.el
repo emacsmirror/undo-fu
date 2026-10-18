@@ -733,6 +733,23 @@ those 2 and stop at the original state."
       undo-fu-test-key-redo-all)
     (should (equal "aaa bbb ccc" (buffer-string)))))
 
+(ert-deftest undo-fu-test-redo-zero-steps ()
+  "Redo zero steps via C-u 0, redoing nothing.
+
+Write a word, undo it, then redo 0 steps.  The buffer is unchanged
+and the undo step can still be redone afterwards."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))
+    (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-redo))
+    (should (equal "" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa" (buffer-string)))))
+
 ;; Local Variables:
 ;; fill-column: 99
 ;; indent-tabs-mode: nil
