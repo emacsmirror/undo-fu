@@ -80,13 +80,18 @@ causing the number of steps to grow even though the buffer content is unchanged.
 ;; Back Port `undo-redo'
 ;; Emacs 28's `undo-redo' back-ported into undo-fu.
 
+(defun undo-fu--undo-list-skip-boundaries (undo-list)
+  "Return UNDO-LIST without its leading boundaries (nil elements)."
+  (declare (important-return-value t))
+  (while (and (consp undo-list) (null (car undo-list)))
+    (setq undo-list (cdr undo-list)))
+  undo-list)
+
 (defun undo-fu--backport-undo--last-change-was-undo-p (undo-list)
   "Return the last changed undo state for UNDO-LIST, or nil if none.
 This checks if UNDO-LIST represents a state that resulted from an undo."
   (declare (important-return-value t))
-  (while (and (consp undo-list) (eq (car undo-list) nil))
-    (setq undo-list (cdr undo-list)))
-  (gethash undo-list undo-equiv-table))
+  (gethash (undo-fu--undo-list-skip-boundaries undo-list) undo-equiv-table))
 
 (defun undo-fu--backport-undo-redo (&optional arg)
   "Undo the last ARG undos."
@@ -96,11 +101,9 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
    ((null (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))
     (user-error "No undone changes to redo"))
    (t
-    (let* ((ul buffer-undo-list)
+    (let* ((ul (undo-fu--undo-list-skip-boundaries buffer-undo-list))
            (new-ul
             (let ((undo-in-progress t))
-              (while (and (consp ul) (eq (car ul) nil))
-                (setq ul (cdr ul)))
               (primitive-undo (or arg 1) ul)))
            (new-pul (undo-fu--backport-undo--last-change-was-undo-p new-ul)))
       (message "Redo%s"
@@ -116,11 +119,8 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
 (defun undo-fu--backport-undo-redo-with-trim (&optional arg)
   "Call `undo-fu--backport-undo-redo', trimming `undo-equiv-table' when enabled."
   (declare (important-return-value nil))
-  (let ((ul buffer-undo-list))
-    ;; Skip leading nils to find the equiv-table key
-    ;; (mirrors the nil-skip in `undo-fu--backport-undo-redo').
-    (while (and (consp ul) (null (car ul)))
-      (setq ul (cdr ul)))
+  ;; The equiv-table key (as used by `undo-fu--backport-undo-redo').
+  (let ((ul (undo-fu--undo-list-skip-boundaries buffer-undo-list)))
     (undo-fu--backport-undo-redo arg)
     (when undo-fu-trim
       (undo-fu--trim-undo-equiv-table ul buffer-undo-list (or arg 1)))))
@@ -157,9 +157,7 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
         (let ((v (gethash k undo-equiv-table)))
           (remhash k undo-equiv-table)
           (when (consp v)
-            (setq k v)
-            (while (and (consp k) (null (car k)))
-              (setq k (cdr k)))))))))
+            (setq k (undo-fu--undo-list-skip-boundaries v))))))))
 
 (defun undo-fu--checkpoint-disable ()
   "Disable using the checkpoint.
