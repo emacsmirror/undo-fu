@@ -733,6 +733,35 @@ those 2 and stop at the original state."
       undo-fu-test-key-redo-all)
     (should (equal "aaa bbb ccc" (buffer-string)))))
 
+(ert-deftest undo-fu-test-multi-step-redo-partial-failure ()
+  "Redo multiple steps where a later step fails, keeping the steps redone.
+
+Edit the end then the start of the buffer, undo both, then narrow the buffer
+to exclude the start.  Redo 2 steps at once via C-u 2, the first step succeeds
+and the second fails, which is shown as a message instead of an error."
+  (with-undo-fu-test "hello"
+    (goto-char (point-max))
+    (simulate-input
+      "X")
+    (goto-char (point-min))
+    (simulate-input
+      "Y")
+    (should (equal "YhelloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))
+    (narrow-to-region 2 (point-max))
+    (setq undo-fu-test--captured-messages nil)
+    (execute-kbd-macro (vconcat [?\C-u ?2] undo-fu-test-key-redo))
+    (widen)
+    (should (equal "helloX" (buffer-string)))
+    (should
+     (member
+      "Changes to be undone are outside visible portion of buffer"
+      undo-fu-test--captured-messages))))
+
 (ert-deftest undo-fu-test-redo-zero-steps ()
   "Redo zero steps via C-u 0, redoing nothing.
 
