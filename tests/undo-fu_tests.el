@@ -281,7 +281,7 @@ the consumed `undo-equiv-table' entry is removed so the count decreases)."
     (should (equal 3 (undo-fu-test-count-undo-steps)))))
 
 (ert-deftest undo-fu-test-undo-redo-cancels-out ()
-  "Undo N then redo N should cancel out in the step count.
+  "Check undo N then redo N cancels out in the step count.
 
 After undoing and redoing the same number of steps, the buffer content
 is restored and the unconstrained step count should be unchanged.
@@ -316,7 +316,7 @@ removed during redo, so undo+redo pairs cancel out cleanly."
       (should (equal count-before (undo-fu-test-count-undo-steps))))))
 
 (ert-deftest undo-fu-test-redo-undo-cancels-out ()
-  "Redo N then undo N should cancel out in the step count.
+  "Check redo N then undo N cancels out in the step count.
 
 Starting from a partially undone state, redoing then undoing the same
 number of steps should restore both buffer content and step count.
@@ -353,7 +353,7 @@ removed during redo, so redo+undo pairs cancel out cleanly."
       (should (equal count-before (undo-fu-test-count-undo-steps))))))
 
 (ert-deftest undo-fu-test-partial-undo-redo-cancels-out ()
-  "Partial undo+redo should cancel out in the step count.
+  "Check partial undo+redo cancels out in the step count.
 
 Write 3 words, undo only 1, redo only 1.  The buffer content and
 unconstrained step count should be unchanged, verifying that trim
@@ -378,7 +378,7 @@ works for partial cycles (not just exhaustive ones)."
       (should (equal count-before (undo-fu-test-count-undo-steps))))))
 
 (ert-deftest undo-fu-test-repeated-undo-redo-cycles-cancel-out ()
-  "Repeated full undo/redo cycles should not drift the step count.
+  "Check repeated full undo/redo cycles don't drift the step count.
 
 Write 3 words, then repeat (undo 3, redo 3) three times.  The step
 count should remain the same after each cycle, verifying that trim
@@ -642,7 +642,7 @@ for `undo-fu-only-redo'."
     (should (equal "aaa bbb ccc" (buffer-string)))))
 
 (ert-deftest undo-fu-test-trim-disabled-step-count-grows ()
-  "With `undo-fu-trim' disabled, redo should increase the step count.
+  "Check redo increases the step count with `undo-fu-trim' disabled.
 
 When `undo-fu-trim' is nil, `undo-equiv-table' entries are preserved
 during redo, so each redo adds a step rather than canceling one out."
