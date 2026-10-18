@@ -349,14 +349,7 @@ Optional argument ARG The number of steps to redo."
                     (substitute-command-keys
                      (format "\\[%s]" (symbol-name undo-fu-quit-command))))))
 
-    (let* ((steps
-            ;; It's important to clamp the number of steps before assigning
-            ;; 'last-command' since it's used when checking the available steps.
-            (cond
-             ((numberp arg)
-              arg)
-             (t
-              1)))
+    (let* ((steps (or arg 1))
            (last-command
             (cond
              (was-undo
