@@ -284,11 +284,10 @@ to perform unconstrained undo/redo actions."
 
   (undo-fu--checkpoint-disable))
 
+;; Uses Emacs 28's `undo-redo' (back-ported).
 ;;;###autoload
 (defun undo-fu-only-redo-all ()
-  "Redo all actions until the initial undo step.
-
-Wraps the `undo' function."
+  "Redo all actions until the initial undo step."
   (declare (important-return-value nil))
   (interactive "*")
   ;; Raise error since we can't do anything useful in this case.
@@ -302,11 +301,10 @@ Wraps the `undo' function."
   (setq this-command 'undo-fu-only-redo)
   (setq undo-fu--was-redo t))
 
+;; Uses Emacs 28's `undo-redo' (back-ported).
 ;;;###autoload
 (defun undo-fu-only-redo (&optional arg)
   "Redo an action until the initial undo action.
-
-Wraps the `undo' function.
 
 Optional argument ARG The number of steps to redo."
   (declare (important-return-value nil))
