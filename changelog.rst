@@ -7,6 +7,8 @@ Change Log
 
   - Add ``undo-fu-clear-all`` to delete all undo history.
   - Add ``undo-fu-trim`` option (enabled by default) to remove ``undo-equiv-table`` entries consumed by redo.
+  - Fix undo with a count of zero (``C-u 0``) causing the next redo to undo the last change,
+    removing it from the undo history.
 
 - Version 0.5 (2022-07-10)
 

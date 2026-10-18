@@ -453,6 +453,13 @@ Optional argument ARG the number of steps to undo."
             (condition-case err
                 (progn
                   (cond
+                   ((< steps 1)
+                    ;; Undo nothing.
+                    ;; NOTE: Don't call `undo-only', although it undoes nothing in this case,
+                    ;; it would add an `undo-equiv-table' entry for the last change
+                    ;; (as if it were an undo), causing the next redo to undo the last change,
+                    ;; removing it from history.
+                    nil)
                    ((and undo-fu--respect (null undo-fu--in-region))
                     (undo-only steps))
                    (t

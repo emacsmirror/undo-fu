@@ -812,6 +812,32 @@ and the undo step can still be redone afterwards."
       undo-fu-test-key-redo)
     (should (equal "aaa" (buffer-string)))))
 
+(ert-deftest undo-fu-test-undo-zero-steps ()
+  "Undo zero steps via C-u 0, undoing nothing.
+
+Write 3 words, then undo 0 steps.  The buffer is unchanged and
+redo must not treat the last edit as an undo step (undoing \" ccc\"
+and removing it from the undo history)."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-undo))
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    (should-error-with-message
+        (simulate-input
+          undo-fu-test-key-redo)
+      'user-error
+      "Redo without undo step (C-g to ignore)")
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    ;; Undo is unaffected.
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))))
+
 ;; Local Variables:
 ;; fill-column: 99
 ;; indent-tabs-mode: nil
