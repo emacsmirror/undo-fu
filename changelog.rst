@@ -6,6 +6,7 @@ Change Log
 - In development.
 
   - Add ``undo-fu-clear-all`` to delete all undo history.
+  - Add ``undo-fu-trim`` option (enabled by default) to remove ``undo-equiv-table`` entries consumed by redo.
 
 - Version 0.5 (2022-07-10)
 
