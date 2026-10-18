@@ -107,14 +107,16 @@ Messages are stored in `undo-fu-test--captured-messages'."
        (let ((minibuffer-message-timeout 0))
          (execute-kbd-macro keys)))))
 
-(defun undo-fu-test-count-undo-steps ()
-  "Count the number of unconstrained undo steps back to the initial state.
-This accounts for both `buffer-undo-list' entries and `undo-equiv-table'
-entries that represent undo/redo transitions trimmed by `undo-fu-only-redo'.
+(defun undo-fu-test-count-history-entries ()
+  "Count undo history entries, including those left by undo+redo pairs.
 
-The count is: direct groups in `buffer-undo-list' plus two for each
+The count is: groups in `buffer-undo-list' plus two for each
 `undo-equiv-table' entry whose key is a superlist of the current
-`buffer-undo-list' (representing a consumed undo+redo pair)."
+`buffer-undo-list' (left by an undo+redo pair).
+
+Note that these entries can't be reached from `buffer-undo-list',
+undo/redo don't use them and they may be removed by garbage collection.
+This measures the entries `undo-fu-trim' removes, not the steps undo can reach."
   (let ((list buffer-undo-list)
         (groups 0)
         (in-group nil)
@@ -171,7 +173,7 @@ Messages are captured and not displayed."
 (defmacro with-undo-fu-test-without-gc (initial-buffer-text &rest body)
   "Run `with-undo-fu-test' with INITIAL-BUFFER-TEXT & BODY, without garbage collection.
 
-Use for tests calling `undo-fu-test-count-undo-steps',
+Use for tests calling `undo-fu-test-count-history-entries',
 as garbage collection removes the entries it counts."
   (declare (indent 1))
   ;; With `undo-fu-trim' disabled the count would be too low,
@@ -248,11 +250,11 @@ because there is nothing left to redo."
       'user-error
       "Redo without undo step (C-g to ignore)")))
 
-(ert-deftest undo-fu-test-unconstrained-step-count ()
-  "Verify the unconstrained undo step count through an undo/redo cycle.
+(ert-deftest undo-fu-test-history-entry-count ()
+  "Verify the history entry count through an undo/redo cycle.
 
 Write 3 words, undo 3 times, redo 3 times.
-Each undo adds a step; each redo removes one (with `undo-fu-trim' enabled,
+Each undo adds an entry; each redo removes one (with `undo-fu-trim' enabled,
 the consumed `undo-equiv-table' entry is removed so the count decreases)."
   (with-undo-fu-test-without-gc ""
     ;; Write 3 words as separate actions.
@@ -263,41 +265,41 @@ the consumed `undo-equiv-table' entry is removed so the count decreases)."
     (simulate-input
       " ccc")
     (should (equal "aaa bbb ccc" (buffer-string)))
-    (should (equal 3 (undo-fu-test-count-undo-steps)))
+    (should (equal 3 (undo-fu-test-count-history-entries)))
 
-    ;; Undo 3 times: each undo adds a step.
+    ;; Undo 3 times: each undo adds an entry.
     (simulate-input
       undo-fu-test-key-undo)
     (should (equal "aaa bbb" (buffer-string)))
-    (should (equal 4 (undo-fu-test-count-undo-steps)))
+    (should (equal 4 (undo-fu-test-count-history-entries)))
     (simulate-input
       undo-fu-test-key-undo)
     (should (equal "aaa" (buffer-string)))
-    (should (equal 5 (undo-fu-test-count-undo-steps)))
+    (should (equal 5 (undo-fu-test-count-history-entries)))
     (simulate-input
       undo-fu-test-key-undo)
     (should (equal "" (buffer-string)))
-    (should (equal 6 (undo-fu-test-count-undo-steps)))
+    (should (equal 6 (undo-fu-test-count-history-entries)))
 
-    ;; Redo 3 times: each redo removes an undo step (trimmed).
+    ;; Redo 3 times: each redo removes an entry (trimmed).
     (simulate-input
       undo-fu-test-key-redo)
     (should (equal "aaa" (buffer-string)))
-    (should (equal 5 (undo-fu-test-count-undo-steps)))
+    (should (equal 5 (undo-fu-test-count-history-entries)))
     (simulate-input
       undo-fu-test-key-redo)
     (should (equal "aaa bbb" (buffer-string)))
-    (should (equal 4 (undo-fu-test-count-undo-steps)))
+    (should (equal 4 (undo-fu-test-count-history-entries)))
     (simulate-input
       undo-fu-test-key-redo)
     (should (equal "aaa bbb ccc" (buffer-string)))
-    (should (equal 3 (undo-fu-test-count-undo-steps)))))
+    (should (equal 3 (undo-fu-test-count-history-entries)))))
 
 (ert-deftest undo-fu-test-undo-redo-cancels-out ()
-  "Check undo N then redo N cancels out in the step count.
+  "Check undo N then redo N cancels out in the history entry count.
 
 After undoing and redoing the same number of steps, the buffer content
-is restored and the unconstrained step count should be unchanged.
+is restored and the history entry count should be unchanged.
 With `undo-fu-trim' enabled, consumed `undo-equiv-table' entries are
 removed during redo, so undo+redo pairs cancel out cleanly."
   (with-undo-fu-test-without-gc ""
@@ -309,7 +311,7 @@ removed during redo, so undo+redo pairs cancel out cleanly."
     (simulate-input
       " ccc")
     (let ((text-before (buffer-string))
-          (count-before (undo-fu-test-count-undo-steps)))
+          (count-before (undo-fu-test-count-history-entries)))
       ;; Undo 3 times, redo 3 times.
       (simulate-input
         undo-fu-test-key-undo)
@@ -326,13 +328,13 @@ removed during redo, so undo+redo pairs cancel out cleanly."
       ;; Buffer content is restored.
       (should (equal text-before (buffer-string)))
       ;; Step count should be unchanged.
-      (should (equal count-before (undo-fu-test-count-undo-steps))))))
+      (should (equal count-before (undo-fu-test-count-history-entries))))))
 
 (ert-deftest undo-fu-test-redo-undo-cancels-out ()
-  "Check redo N then undo N cancels out in the step count.
+  "Check redo N then undo N cancels out in the history entry count.
 
 Starting from a partially undone state, redoing then undoing the same
-number of steps should restore both buffer content and step count.
+number of steps should restore both buffer content and history entry count.
 With `undo-fu-trim' enabled, consumed `undo-equiv-table' entries are
 removed during redo, so redo+undo pairs cancel out cleanly."
   (with-undo-fu-test-without-gc ""
@@ -350,7 +352,7 @@ removed during redo, so redo+undo pairs cancel out cleanly."
     (simulate-input
       undo-fu-test-key-undo)
     (let ((text-before (buffer-string))
-          (count-before (undo-fu-test-count-undo-steps)))
+          (count-before (undo-fu-test-count-history-entries)))
       ;; Redo 2 times, undo 2 times.
       (simulate-input
         undo-fu-test-key-redo)
@@ -363,13 +365,13 @@ removed during redo, so redo+undo pairs cancel out cleanly."
       ;; Buffer content is restored.
       (should (equal text-before (buffer-string)))
       ;; Step count should be unchanged.
-      (should (equal count-before (undo-fu-test-count-undo-steps))))))
+      (should (equal count-before (undo-fu-test-count-history-entries))))))
 
 (ert-deftest undo-fu-test-partial-undo-redo-cancels-out ()
-  "Check partial undo+redo cancels out in the step count.
+  "Check partial undo+redo cancels out in the history entry count.
 
 Write 3 words, undo only 1, redo only 1.  The buffer content and
-unconstrained step count should be unchanged, verifying that trim
+history entry count should be unchanged, verifying that trim
 works for partial cycles (not just exhaustive ones)."
   (with-undo-fu-test-without-gc ""
     (simulate-input
@@ -379,7 +381,7 @@ works for partial cycles (not just exhaustive ones)."
     (simulate-input
       " ccc")
     (let ((text-before (buffer-string))
-          (count-before (undo-fu-test-count-undo-steps)))
+          (count-before (undo-fu-test-count-history-entries)))
       ;; Undo 1 time, redo 1 time.
       (simulate-input
         undo-fu-test-key-undo)
@@ -388,13 +390,13 @@ works for partial cycles (not just exhaustive ones)."
       ;; Buffer content is restored.
       (should (equal text-before (buffer-string)))
       ;; Step count should be unchanged.
-      (should (equal count-before (undo-fu-test-count-undo-steps))))))
+      (should (equal count-before (undo-fu-test-count-history-entries))))))
 
 (ert-deftest undo-fu-test-repeated-undo-redo-cycles-cancel-out ()
-  "Check repeated full undo/redo cycles don't drift the step count.
+  "Check repeated full undo/redo cycles don't drift the history entry count.
 
-Write 3 words, then repeat (undo 3, redo 3) three times.  The step
-count should remain the same after each cycle, verifying that trim
+Write 3 words, then repeat (undo 3, redo 3) three times.  The history
+entry count should remain the same after each cycle, verifying that trim
 is stable and idempotent over multiple rounds."
   (with-undo-fu-test-without-gc ""
     (simulate-input
@@ -404,7 +406,7 @@ is stable and idempotent over multiple rounds."
     (simulate-input
       " ccc")
     (let ((text-before (buffer-string))
-          (count-before (undo-fu-test-count-undo-steps)))
+          (count-before (undo-fu-test-count-history-entries)))
       (dotimes (_ 3)
         ;; Undo 3 times, redo 3 times.
         (simulate-input
@@ -422,13 +424,13 @@ is stable and idempotent over multiple rounds."
         ;; Buffer content is restored.
         (should (equal text-before (buffer-string)))
         ;; Step count should be unchanged after each cycle.
-        (should (equal count-before (undo-fu-test-count-undo-steps)))))))
+        (should (equal count-before (undo-fu-test-count-history-entries)))))))
 
 (ert-deftest undo-fu-test-interleaved-edit-undo-redo-cancels-out ()
   "Undo/redo cycles interleaved with edits should each cancel out.
 
 Write 2 words, undo 1 + redo 1 (cancel), write a 3rd word,
-undo 1 + redo 1 (cancel).  The step count should be correct after
+undo 1 + redo 1 (cancel).  The history entry count should be correct after
 each cycle, verifying that trim works when new edits are interspersed."
   (with-undo-fu-test-without-gc ""
     (simulate-input
@@ -436,26 +438,26 @@ each cycle, verifying that trim works when new edits are interspersed."
     (simulate-input
       " bbb")
     (let ((text-phase1 (buffer-string))
-          (count-phase1 (undo-fu-test-count-undo-steps)))
+          (count-phase1 (undo-fu-test-count-history-entries)))
       ;; First cancel cycle.
       (simulate-input
         undo-fu-test-key-undo)
       (simulate-input
         undo-fu-test-key-redo)
       (should (equal text-phase1 (buffer-string)))
-      (should (equal count-phase1 (undo-fu-test-count-undo-steps))))
+      (should (equal count-phase1 (undo-fu-test-count-history-entries))))
     ;; New edit.
     (simulate-input
       " ccc")
     (let ((text-phase2 (buffer-string))
-          (count-phase2 (undo-fu-test-count-undo-steps)))
+          (count-phase2 (undo-fu-test-count-history-entries)))
       ;; Second cancel cycle.
       (simulate-input
         undo-fu-test-key-undo)
       (simulate-input
         undo-fu-test-key-redo)
       (should (equal text-phase2 (buffer-string)))
-      (should (equal count-phase2 (undo-fu-test-count-undo-steps))))))
+      (should (equal count-phase2 (undo-fu-test-count-history-entries))))))
 
 (ert-deftest undo-fu-test-nop-undo-disabled ()
   "Undo and redo should error when undo is disabled.
@@ -654,11 +656,12 @@ for `undo-fu-only-redo'."
     (execute-kbd-macro (vconcat [?\C-u ?3] undo-fu-test-key-redo))
     (should (equal "aaa bbb ccc" (buffer-string)))))
 
-(ert-deftest undo-fu-test-trim-disabled-step-count-grows ()
-  "Check redo increases the step count with `undo-fu-trim' disabled.
+(ert-deftest undo-fu-test-trim-disabled-history-entry-count-grows ()
+  "Check redo increases the history entry count with `undo-fu-trim' disabled.
 
 When `undo-fu-trim' is nil, `undo-equiv-table' entries are preserved
-during redo, so each redo adds a step rather than canceling one out."
+during redo, so each redo leaves an entry rather than canceling one out
+\(see `undo-fu-test-count-history-entries' for what is counted)."
   (with-undo-fu-test-without-gc ""
     (let ((undo-fu-trim nil))
       (simulate-input
@@ -667,25 +670,25 @@ during redo, so each redo adds a step rather than canceling one out."
         " bbb")
       (simulate-input
         " ccc")
-      (should (equal 3 (undo-fu-test-count-undo-steps)))
-      ;; Undo 3 times: each adds a step (same as with trim).
+      (should (equal 3 (undo-fu-test-count-history-entries)))
+      ;; Undo 3 times: each adds an entry (same as with trim).
       (simulate-input
         undo-fu-test-key-undo)
       (simulate-input
         undo-fu-test-key-undo)
       (simulate-input
         undo-fu-test-key-undo)
-      (should (equal 6 (undo-fu-test-count-undo-steps)))
-      ;; Redo 3 times: each ALSO adds a step (no trim).
+      (should (equal 6 (undo-fu-test-count-history-entries)))
+      ;; Redo 3 times: each ALSO adds an entry (no trim).
       (simulate-input
         undo-fu-test-key-redo)
-      (should (equal 7 (undo-fu-test-count-undo-steps)))
+      (should (equal 7 (undo-fu-test-count-history-entries)))
       (simulate-input
         undo-fu-test-key-redo)
-      (should (equal 8 (undo-fu-test-count-undo-steps)))
+      (should (equal 8 (undo-fu-test-count-history-entries)))
       (simulate-input
         undo-fu-test-key-redo)
-      (should (equal 9 (undo-fu-test-count-undo-steps))))))
+      (should (equal 9 (undo-fu-test-count-history-entries))))))
 
 (ert-deftest undo-fu-test-undo-stops-at-initial-text ()
   "Undo should not go past the initial buffer text.
