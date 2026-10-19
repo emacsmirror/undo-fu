@@ -93,11 +93,22 @@ Messages are stored in `undo-fu-test--captured-messages'."
   "Key binding used for `undo-fu-disable-checkpoint' in tests.")
 (defconst undo-fu-test-key-redo-all [f8]
   "Key binding used for `undo-fu-only-redo-all' in tests.")
+(defconst undo-fu-test-key-keyboard-quit [f10]
+  "Key binding used for `undo-fu-test--keyboard-quit' in tests.")
+
+(defun undo-fu-test--keyboard-quit ()
+  "Stand in for `keyboard-quit' in keyboard macros.
+
+Running `keyboard-quit' from a keyboard macro signals `quit', aborting the macro,
+so only set `this-command', seen as `last-command' by the next command in the macro."
+  (interactive)
+  (setq this-command 'keyboard-quit))
 
 (global-set-key undo-fu-test-key-undo 'undo-fu-only-undo)
 (global-set-key undo-fu-test-key-redo 'undo-fu-only-redo)
 (global-set-key undo-fu-test-key-disable-checkpoint 'undo-fu-disable-checkpoint)
 (global-set-key undo-fu-test-key-redo-all 'undo-fu-only-redo-all)
+(global-set-key undo-fu-test-key-keyboard-quit 'undo-fu-test--keyboard-quit)
 
 (defmacro simulate-input (&rest keys)
   "Helper macro to simulate input using KEYS."
@@ -806,11 +817,72 @@ and the undo step can still be redone afterwards."
     (simulate-input
       undo-fu-test-key-undo)
     (should (equal "" (buffer-string)))
+    (setq undo-fu-test--captured-messages nil)
     (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-redo))
     (should (equal "" (buffer-string)))
+    (should-not undo-fu-test--captured-messages)
     (simulate-input
       undo-fu-test-key-redo)
     (should (equal "aaa" (buffer-string)))))
+
+(ert-deftest undo-fu-test-redo-zero-steps-between-unconstrained-undo ()
+  "Redo zero steps via C-u 0 between unconstrained undo steps.
+
+Write 3 words, undo 1 step, then disable the checkpoint.  Redoing nothing
+must not change the undo state, otherwise the next unconstrained undo
+would redo \" ccc\" instead of undoing \" bbb\"."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-disable-checkpoint)
+    (setq undo-fu-test--captured-messages nil)
+    (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-redo))
+    (should (equal "aaa bbb" (buffer-string)))
+    (should-not undo-fu-test--captured-messages)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))))
+
+(ert-deftest undo-fu-test-redo-zero-steps-after-keyboard-quit ()
+  "Redo zero steps via C-u 0 after `keyboard-quit', stepping over the checkpoint.
+
+Write 3 words, undo 2, then press `keyboard-quit' and redo nothing.
+The checkpoint is stepped over as with any other count, so the following
+redo steps are unconstrained, continuing past the initial undo step."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (simulate-input
+      undo-fu-test-key-undo
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))
+    (setq undo-fu-test--captured-messages nil)
+    ;; A single key-macro so `last-command' is `keyboard-quit' when the redo runs.
+    (execute-kbd-macro (vconcat undo-fu-test-key-keyboard-quit [?\C-u ?0] undo-fu-test-key-redo))
+    (should (equal "aaa" (buffer-string)))
+    (should (member "Redo checkpoint stepped over!" undo-fu-test--captured-messages))
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    ;; Unconstrained, redo continues past the initial undo step.
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb" (buffer-string)))))
 
 (ert-deftest undo-fu-test-undo-zero-steps ()
   "Undo zero steps via C-u 0, undoing nothing.
@@ -825,8 +897,10 @@ and removing it from the undo history)."
       " bbb")
     (simulate-input
       " ccc")
+    (setq undo-fu-test--captured-messages nil)
     (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-undo))
     (should (equal "aaa bbb ccc" (buffer-string)))
+    (should-not undo-fu-test--captured-messages)
     (should-error-with-message
         (simulate-input
           undo-fu-test-key-redo)
@@ -837,6 +911,96 @@ and removing it from the undo history)."
     (simulate-input
       undo-fu-test-key-undo)
     (should (equal "aaa bbb" (buffer-string)))))
+
+(ert-deftest undo-fu-test-undo-zero-steps-between-unconstrained-redo ()
+  "Undo zero steps via C-u 0 between unconstrained redo steps.
+
+Write 3 words, undo them, then redo 2 steps unconstrained.  Undoing nothing
+must not change the redo state, otherwise the next unconstrained redo
+would undo the last redo instead of redoing \" ccc\"."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (simulate-input
+      undo-fu-test-key-undo
+      undo-fu-test-key-undo
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-disable-checkpoint
+      undo-fu-test-key-redo
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb" (buffer-string)))
+    (setq undo-fu-test--captured-messages nil)
+    (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-undo))
+    (should (equal "aaa bbb" (buffer-string)))
+    (should-not undo-fu-test--captured-messages)
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb ccc" (buffer-string)))))
+
+(ert-deftest undo-fu-test-undo-zero-steps-after-keyboard-quit ()
+  "Undo zero steps via C-u 0 after `keyboard-quit', stepping over the checkpoint.
+
+Write 2 words, undo the second, then write a third word and undo it.
+Press `keyboard-quit' and undo nothing: the checkpoint is stepped over
+as with any other count, so the following undo is unconstrained,
+restoring the second word instead of skipping it."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))
+    (simulate-input
+      " ccc")
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))
+    (setq undo-fu-test--captured-messages nil)
+    ;; A single key-macro so `last-command' is `keyboard-quit' when the undo runs.
+    (execute-kbd-macro (vconcat undo-fu-test-key-keyboard-quit [?\C-u ?0] undo-fu-test-key-undo))
+    (should (equal "aaa" (buffer-string)))
+    (should (member "Undo checkpoint ignored!" undo-fu-test--captured-messages))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))))
+
+(ert-deftest undo-fu-test-undo-redo-zero-steps-deactivate-region ()
+  "Undo & redo zero steps via C-u 0 with an active region, deactivating it.
+
+Undo & redo deactivate the region before running (unless `undo-fu-allow-undo-in-region'
+is set), this must also apply when nothing is undone or redone."
+  ;; Off in batch mode, needed for `region-active-p'.
+  (let ((transient-mark-mode t))
+    (with-undo-fu-test ""
+      (simulate-input
+        "aaa")
+      (simulate-input
+        " bbb")
+      (simulate-input
+        undo-fu-test-key-undo)
+      (should (equal "aaa" (buffer-string)))
+      (set-mark (point-min))
+      (should (region-active-p))
+      (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-undo))
+      (should (equal "aaa" (buffer-string)))
+      (should-not (region-active-p))
+      (set-mark (point-min))
+      (should (region-active-p))
+      (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-redo))
+      (should (equal "aaa" (buffer-string)))
+      (should-not (region-active-p))
+      ;; The undo step can still be redone.
+      (simulate-input
+        undo-fu-test-key-redo)
+      (should (equal "aaa bbb" (buffer-string))))))
 
 ;; Local Variables:
 ;; fill-column: 99
