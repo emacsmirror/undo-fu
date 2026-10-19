@@ -275,6 +275,15 @@ Optional argument BODY runs with the message suffix."
          ;; Protected.
          (setq ,message-list (append ,message-list (nreverse temp-message-list)))))))
 
+(defun undo-fu--undo-unconstrained (steps)
+  "Call `undo' for STEPS, allowing previous undo steps to be undone (redoing them)."
+  (declare (important-return-value nil))
+  (undo-fu--with-message-suffix " (unconstrained)"
+    ;; Ignore the user's `undo-no-redo',
+    ;; as unconstrained undo/redo relies on `undo' undoing previous undo steps.
+    (let ((undo-no-redo nil))
+      (undo steps))))
+
 (defun undo-fu--undo-enabled-or-error ()
   "Raise a user error when undo is disabled."
   (declare (important-return-value nil))
@@ -394,9 +403,7 @@ Optional argument ARG The number of steps to redo."
                       (undo-fu--redo-steps steps)
                       (setq undo-fu--was-redo 'constrained))
                      (t
-                      (undo-fu--with-message-suffix " (unconstrained)"
-                        (let ((undo-no-redo nil))
-                          (undo steps)))
+                      (undo-fu--undo-unconstrained steps)
                       (setq undo-fu--was-redo 'unconstrained)))
                     t)
                 (error
@@ -463,9 +470,7 @@ Optional argument ARG the number of steps to undo."
                      ((and undo-fu--respect (null undo-fu--in-region))
                       (undo-only steps))
                      (t
-                      (undo-fu--with-message-suffix " (unconstrained)"
-                        (let ((undo-no-redo nil))
-                          (undo steps)))))
+                      (undo-fu--undo-unconstrained steps)))
                     t)
                 (error
                  (message "%s" (error-message-string err))
