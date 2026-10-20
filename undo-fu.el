@@ -98,7 +98,6 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
 (defun undo-fu--backport-undo-redo (&optional arg)
   "Undo the last ARG undos."
   (declare (important-return-value nil))
-  (interactive "*p")
   (cond
    ((null (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list))
     (user-error "No undone changes to redo"))
