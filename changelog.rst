@@ -11,6 +11,8 @@ Change Log
     (removing it from the undo history), or reversing unconstrained undo/redo.
   - Fix redo with a count larger than the undo steps (``C-u N``) undoing past the initial undo step,
     discarding the earlier undo history.
+  - Fix unconstrained redo (``C-g`` then redo) after a constrained redo
+    undoing the change just redone instead of redoing the next.
 
 - Version 0.5 (2022-07-10)
 

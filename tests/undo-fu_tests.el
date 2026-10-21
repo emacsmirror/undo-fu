@@ -1023,6 +1023,99 @@ redo steps are unconstrained, continuing past the initial undo step."
       undo-fu-test-key-redo)
     (should (equal "aaa bbb" (buffer-string)))))
 
+(ert-deftest undo-fu-test-unconstrained-redo-after-redo ()
+  "Unconstrained redo after a constrained redo, continuing the redo.
+
+Write 3 words, undo them, then redo 1 step.  Disable the checkpoint and redo:
+the second word is redone instead of undoing the first.
+Redo then continues the chain, after which undo reverses it."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (simulate-input
+      undo-fu-test-key-undo
+      undo-fu-test-key-undo
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-disable-checkpoint
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))))
+
+(ert-deftest undo-fu-test-unconstrained-redo-after-redo-and-cursor-motion ()
+  "Unconstrained redo after a constrained redo, with the cursor moved in between.
+
+Write 3 words, undo them, then redo 1 step.  Disable the checkpoint,
+move the cursor and redo: the second word is redone instead of undoing the first.
+
+Verifies the last redo being constrained is tracked, not taken from the checkpoint,
+which is already disabled by the time redo runs."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (simulate-input
+      undo-fu-test-key-undo
+      undo-fu-test-key-undo
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-disable-checkpoint)
+    ;; Move the cursor, a command which doesn't change the buffer.
+    (simulate-input
+      [?\C-a])
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "aaa bbb" (buffer-string)))))
+
+(ert-deftest undo-fu-test-unconstrained-redo-after-redo-partial-failure ()
+  "Unconstrained redo after a redo of multiple steps which fails part way.
+
+Edit the end then the start of the buffer, undo both, then narrow the buffer
+to exclude the start.  Redo 2 steps at once via C-u 2, the first step succeeds
+and the second fails.  Widen, disable the checkpoint and redo:
+the step which failed is redone, instead of undoing the step which succeeded."
+  (with-undo-fu-test "hello"
+    (goto-char (point-max))
+    (simulate-input
+      "X")
+    (goto-char (point-min))
+    (simulate-input
+      "Y")
+    (should (equal "YhelloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))
+    (narrow-to-region 2 (point-max))
+    (execute-kbd-macro (vconcat [?\C-u ?2] undo-fu-test-key-redo))
+    (widen)
+    (should (equal "helloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-disable-checkpoint
+      undo-fu-test-key-redo)
+    (should (equal "YhelloX" (buffer-string)))))
+
 (ert-deftest undo-fu-test-undo-zero-steps ()
   "Undo zero steps via C-u 0, undoing nothing.
 

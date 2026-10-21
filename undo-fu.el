@@ -69,7 +69,9 @@ causing the number of steps to grow even though the buffer content is unchanged.
 ;; Initiated an undo-in region (don't use `undo-only').
 ;; Only use when `undo-fu-allow-undo-in-region' is true.
 (defvar-local undo-fu--in-region nil)
-;; Track the last undo/redo direction.
+;; Track the last undo/redo direction, nil after undo. After redo, how the steps were redone:
+;; - `constrained': by the back-port, leaving `pending-undo-list' continuing the undo.
+;; - `unconstrained': by `undo', leaving `pending-undo-list' continuing the redo.
 ;; Use in conjunction with `undo-fu--was-undo-or-redo' to ensure the value isn't stale.
 (defvar-local undo-fu--was-redo nil)
 ;; List of interactive commands.
@@ -326,7 +328,7 @@ to perform unconstrained undo/redo actions."
     (dolist (message-text message-list)
       (message "%s All" message-text)))
   (setq this-command 'undo-fu-only-redo)
-  (setq undo-fu--was-redo t))
+  (setq undo-fu--was-redo 'constrained))
 
 ;; Uses Emacs 28's `undo-redo' (back-ported).
 ;;;###autoload
@@ -369,7 +371,13 @@ Optional argument ARG The number of steps to redo."
                (was-undo
                 ;; Break undo chain, avoid having to press [keyboard-quit].
                 'ignore)
-               (was-redo
+               ((eq was-redo 'constrained)
+                ;; Break the chain so `undo' redoes the next undo step.
+                ;; NOTE: the back-port leaves `pending-undo-list' continuing the undo
+                ;; (as `undo-redo' does), which unconstrained undo after a constrained redo
+                ;; relies on.
+                'ignore)
+               ((eq was-redo 'unconstrained)
                 ;; Checked by the undo function.
                 'undo)
                ((eq last-command 'keyboard-quit)
@@ -385,18 +393,17 @@ Optional argument ARG The number of steps to redo."
                   (progn
                     (cond
                      (undo-fu--respect
-                      (undo-fu--redo-steps steps))
+                      (undo-fu--redo-steps steps)
+                      (setq undo-fu--was-redo 'constrained))
                      (t
                       (undo-fu--with-message-suffix " (unconstrained)"
                         (let ((undo-no-redo nil))
-                          (undo steps)))))
+                          (undo steps)))
+                      (setq undo-fu--was-redo 'unconstrained)))
                     t)
                 (error
                  (message "%s" (error-message-string err))
                  nil))))
-
-        (when success
-          (setq undo-fu--was-redo t))
 
         (setq this-command 'undo-fu-only-redo)
         success)))))
