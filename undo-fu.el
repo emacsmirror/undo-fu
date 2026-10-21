@@ -69,11 +69,11 @@ causing the number of steps to grow even though the buffer content is unchanged.
 ;; Initiated an undo-in region (don't use `undo-only').
 ;; Only use when `undo-fu-allow-undo-in-region' is true.
 (defvar-local undo-fu--in-region nil)
-;; Track the last undo/redo direction, nil after undo. After redo, how the steps were redone:
+;; How the last redo was done, nil after undo:
 ;; - `constrained': by the back-port, leaving `pending-undo-list' continuing the undo.
 ;; - `unconstrained': by `undo', leaving `pending-undo-list' continuing the redo.
 ;; Use in conjunction with `undo-fu--was-undo-or-redo' to ensure the value isn't stale.
-(defvar-local undo-fu--was-redo nil)
+(defvar-local undo-fu--last-redo nil)
 ;; List of interactive commands.
 (defconst undo-fu--commands
   '(undo-fu-only-undo undo-fu-only-redo-all undo-fu-only-redo undo-fu-disable-checkpoint))
@@ -336,7 +336,7 @@ to perform unconstrained undo/redo actions."
     (dolist (message-text message-list)
       (message "%s All" message-text)))
   (setq this-command 'undo-fu-only-redo)
-  (setq undo-fu--was-redo 'constrained))
+  (setq undo-fu--last-redo 'constrained))
 
 ;; Uses Emacs 28's `undo-redo' (back-ported).
 ;;;###autoload
@@ -352,7 +352,7 @@ Optional argument ARG The number of steps to redo."
   ;; Assign `was-undo-or-redo', `was-redo' & `was-undo' for convenience.
   (let* ((steps (or arg 1))
          (was-undo-or-redo (undo-fu--was-undo-or-redo))
-         (was-redo (and was-undo-or-redo undo-fu--was-redo))
+         (was-redo (and was-undo-or-redo undo-fu--last-redo))
          (was-undo (and was-undo-or-redo (null was-redo))))
 
     (undo-fu--checkpoint-update was-undo-or-redo "Redo checkpoint stepped over!")
@@ -401,10 +401,10 @@ Optional argument ARG The number of steps to redo."
                     (cond
                      (undo-fu--respect
                       (undo-fu--redo-steps steps)
-                      (setq undo-fu--was-redo 'constrained))
+                      (setq undo-fu--last-redo 'constrained))
                      (t
                       (undo-fu--undo-unconstrained steps)
-                      (setq undo-fu--was-redo 'unconstrained)))
+                      (setq undo-fu--last-redo 'unconstrained)))
                     t)
                 (error
                  (message "%s" (error-message-string err))
@@ -428,7 +428,7 @@ Optional argument ARG the number of steps to undo."
   ;; Assign `was-undo-or-redo' & `was-redo' for convenience.
   (let* ((steps (or arg 1))
          (was-undo-or-redo (undo-fu--was-undo-or-redo))
-         (was-redo (and was-undo-or-redo undo-fu--was-redo)))
+         (was-redo (and was-undo-or-redo undo-fu--last-redo)))
 
     (undo-fu--checkpoint-update was-undo-or-redo "Undo checkpoint ignored!")
 
@@ -477,7 +477,7 @@ Optional argument ARG the number of steps to undo."
                  nil))))
 
         (when success
-          (setq undo-fu--was-redo nil))
+          (setq undo-fu--last-redo nil))
 
         (setq this-command 'undo-fu-only-undo)
         success)))))
