@@ -9,6 +9,8 @@ Change Log
   - Add ``undo-fu-trim`` option (enabled by default) to remove ``undo-equiv-table`` entries consumed by redo.
   - Fix undo/redo with a count of zero (``C-u 0``) causing the next redo to undo the last change
     (removing it from the undo history), or reversing unconstrained undo/redo.
+  - Fix redo with a count larger than the undo steps (``C-u N``) undoing past the initial undo step,
+    discarding the earlier undo history.
 
 - Version 0.5 (2022-07-10)
 

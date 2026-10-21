@@ -116,48 +116,41 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
       (setq pending-undo-list new-pul)
       (setq buffer-undo-list new-ul)))))
 
-(defun undo-fu--backport-undo-redo-with-trim (&optional arg)
-  "Call `undo-fu--backport-undo-redo', trimming `undo-equiv-table' when enabled."
+(defun undo-fu--backport-undo-redo-with-trim ()
+  "Redo a single step, trimming `undo-equiv-table' when enabled."
   (declare (important-return-value nil))
   ;; The equiv-table key (as used by `undo-fu--backport-undo-redo').
   (let ((ul (undo-fu--undo-list-skip-boundaries buffer-undo-list)))
-    (undo-fu--backport-undo-redo arg)
+    (undo-fu--backport-undo-redo 1)
     (when undo-fu-trim
-      (undo-fu--trim-undo-equiv-table ul buffer-undo-list (or arg 1)))))
+      ;; Remove the entry of the group consumed by redo so undo+redo cancels out.
+      ;; As only one group is redone, this is the only key it could contain.
+      ;;
+      ;; NOTE: while it may seem the entry value could be followed to remove more entries,
+      ;; the value is the position undo had reached in older history (used by `undo-only'
+      ;; to skip changes which were already undone), not the next group in this list.
+      ;; Removing entries found this way breaks `undo-only', so only remove this key.
+      (remhash ul undo-equiv-table))))
 
 
 ;; ---------------------------------------------------------------------------
 ;; Internal Functions/Macros
 
-(defun undo-fu--trim-undo-equiv-table (ul new-ul steps)
-  "Remove `undo-equiv-table' entries consumed by redo so undo+redo cancels out."
+(defun undo-fu--redo-steps (steps)
+  "Redo up to STEPS steps, stopping once the last change isn't an undo."
   (declare (important-return-value nil))
-  ;; UL is the nils-skipped head of the old `buffer-undo-list' (the start point
-  ;; passed to `primitive-undo').  NEW-UL is the remaining tail returned by
-  ;; `primitive-undo'.  STEPS is the requested number of redo steps.
-  ;;
-  ;; While the requested step count is known, `primitive-undo' may process fewer
-  ;; groups than requested, so we can't rely on it.  Instead, remove the entry of
-  ;; each group actually processed: the nil-separated groups between UL and NEW-UL,
-  ;; capped at STEPS.  Each entry is keyed by the first record of its group,
-  ;; as `undo' stores the undo list (without leading boundaries) after each undo.
-  ;;
-  ;; NOTE: while it may seem the entry value could be followed to find the next group,
-  ;; the value is the position undo had reached in older history (used by `undo-only'
-  ;; to skip changes which were already undone), not the next group in this list.
-  ;; Removing entries found this way breaks `undo-only'.
-  (let ((consumed 0)
-        (scan ul)
-        (in-group nil))
-    (while (and (consp scan) (not (eq scan new-ul)) (< consumed steps))
-      (cond
-       ((null (car scan))
-        (setq in-group nil))
-       ((null in-group)
-        (setq in-group t)
-        (setq consumed (1+ consumed))
-        (remhash scan undo-equiv-table)))
-      (setq scan (cdr scan)))))
+  ;; Redo one step at a time, passing STEPS to `primitive-undo' would continue past
+  ;; the undo steps, undoing (and discarding) the earlier history when STEPS is too large.
+  (let ((count 0))
+    (while (and (< count steps) (undo-fu--was-undo-or-redo))
+      ;; Separate the changes made by this step from the group being redone.
+      ;; NOTE: after a step, `buffer-undo-list' starts with the next group's changes,
+      ;; so when a step fails part way, the changes it made would be added to
+      ;; that group, causing the next undo to finish the redo instead of reverting it.
+      ;; When the step succeeds, the boundary is removed with the changes it made.
+      (undo-boundary)
+      (undo-fu--backport-undo-redo-with-trim)
+      (setq count (1+ count)))))
 
 (defun undo-fu--checkpoint-disable ()
   "Disable using the checkpoint.
@@ -329,8 +322,7 @@ to perform unconstrained undo/redo actions."
   (undo-fu--undo-enabled-or-error)
   (let ((message-list (list)))
     (undo-fu--with-messages-as-non-repeating-list message-list
-      (while (undo-fu--was-undo-or-redo)
-        (undo-fu--backport-undo-redo-with-trim 1)))
+      (undo-fu--redo-steps most-positive-fixnum))
     (dolist (message-text message-list)
       (message "%s All" message-text)))
   (setq this-command 'undo-fu-only-redo)
@@ -393,7 +385,7 @@ Optional argument ARG The number of steps to redo."
                   (progn
                     (cond
                      (undo-fu--respect
-                      (undo-fu--backport-undo-redo-with-trim steps))
+                      (undo-fu--redo-steps steps))
                      (t
                       (undo-fu--with-message-suffix " (unconstrained)"
                         (let ((undo-no-redo nil))

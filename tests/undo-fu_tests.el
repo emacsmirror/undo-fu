@@ -667,6 +667,38 @@ for `undo-fu-only-redo'."
     (execute-kbd-macro (vconcat [?\C-u ?3] undo-fu-test-key-redo))
     (should (equal "aaa bbb ccc" (buffer-string)))))
 
+(ert-deftest undo-fu-test-multi-step-redo-stops-at-initial-undo ()
+  "Redo with a count larger than the undo steps, without undoing.
+
+Write 3 words, undo 2, then redo 3 at once via C-u 3.  Only the 2 undo
+steps should be redone, the remaining step must not undo \" ccc\"
+\(which would also remove it from the undo history)."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))
+    ;; Redo 3 steps at once via C-u 3, only 2 are available.
+    (execute-kbd-macro (vconcat [?\C-u ?3] undo-fu-test-key-redo))
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    ;; The history is intact, undo all the way back.
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))))
+
 (ert-deftest undo-fu-test-multi-step-redo-keeps-undone-history ()
   "Redo multiple steps, keeping undo from restoring previously undone changes.
 
@@ -841,6 +873,47 @@ and the second fails, which is shown as a message instead of an error."
      (member
       "Changes to be undone are outside visible portion of buffer"
       undo-fu-test--captured-messages))))
+
+(ert-deftest undo-fu-test-multi-step-redo-partial-failure-within-step ()
+  "Redo multiple steps where a later step fails part way, then undo.
+
+Edit the buffer, then edit the end and the start in one command, undo both,
+then narrow the buffer to exclude the start.  Redo 2 steps at once via C-u 2,
+the second step fails after redoing the edit at the end.
+Undo reverts the partially redone step instead of finishing it."
+  (with-undo-fu-test "hello"
+    (goto-char (point-max))
+    (simulate-input
+      "X")
+    (let ((map (make-sparse-keymap)))
+      (define-key
+       map [f9]
+       (lambda ()
+         (interactive)
+         (goto-char (point-max))
+         (insert "E")
+         (goto-char (point-min))
+         (insert "S")))
+      (use-local-map map))
+    (simulate-input
+      [f9])
+    (should (equal "ShelloXE" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))
+    (narrow-to-region 2 (point-max))
+    (execute-kbd-macro (vconcat [?\C-u ?2] undo-fu-test-key-redo))
+    (widen)
+    (should (equal "helloXE" (buffer-string)))
+    ;; Revert the partially redone step.
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "helloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))))
 
 (ert-deftest undo-fu-test-redo-all-partial-failure ()
   "Redo-all where a later step fails, keeping the steps redone.
