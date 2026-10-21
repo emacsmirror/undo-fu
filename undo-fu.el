@@ -137,9 +137,15 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
   ;; `primitive-undo'.  STEPS is the requested number of redo steps.
   ;;
   ;; While the requested step count is known, `primitive-undo' may process fewer
-  ;; groups than requested, so we can't rely on it.  Instead, count the groups
-  ;; actually processed: the nil-separated groups between UL and NEW-UL,
-  ;; capped at STEPS.
+  ;; groups than requested, so we can't rely on it.  Instead, remove the entry of
+  ;; each group actually processed: the nil-separated groups between UL and NEW-UL,
+  ;; capped at STEPS.  Each entry is keyed by the first record of its group,
+  ;; as `undo' stores the undo list (without leading boundaries) after each undo.
+  ;;
+  ;; NOTE: while it may seem the entry value could be followed to find the next group,
+  ;; the value is the position undo had reached in older history (used by `undo-only'
+  ;; to skip changes which were already undone), not the next group in this list.
+  ;; Removing entries found this way breaks `undo-only'.
   (let ((consumed 0)
         (scan ul)
         (in-group nil))
@@ -149,15 +155,9 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
         (setq in-group nil))
        ((null in-group)
         (setq in-group t)
-        (setq consumed (1+ consumed))))
-      (setq scan (cdr scan)))
-    ;; Walk the equiv-table chain, removing exactly `consumed' entries.
-    (let ((k ul))
-      (dotimes (_ consumed)
-        (let ((v (gethash k undo-equiv-table)))
-          (remhash k undo-equiv-table)
-          (when (consp v)
-            (setq k (undo-fu--undo-list-skip-boundaries v))))))))
+        (setq consumed (1+ consumed))
+        (remhash scan undo-equiv-table)))
+      (setq scan (cdr scan)))))
 
 (defun undo-fu--checkpoint-disable ()
   "Disable using the checkpoint.

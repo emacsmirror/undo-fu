@@ -667,6 +667,72 @@ for `undo-fu-only-redo'."
     (execute-kbd-macro (vconcat [?\C-u ?3] undo-fu-test-key-redo))
     (should (equal "aaa bbb ccc" (buffer-string)))))
 
+(ert-deftest undo-fu-test-multi-step-redo-keeps-undone-history ()
+  "Redo multiple steps, keeping undo from restoring previously undone changes.
+
+Write 2 words, undo the second, write 2 more words, undo 2, then redo
+both at once via C-u 2.  Undoing all the way should never restore the
+word undone earlier.  Verifies `undo-fu-trim' only removes the entries
+consumed by redo, keeping those `undo-only' uses to skip undone changes."
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    ;; Undo " bbb", then continue editing so it's part of older history.
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      " xxx")
+    (simulate-input
+      " yyy")
+    (should (equal "aaa xxx yyy" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))
+    ;; Redo 2 steps at once via C-u 2.
+    (execute-kbd-macro (vconcat [?\C-u ?2] undo-fu-test-key-redo))
+    (should (equal "aaa xxx yyy" (buffer-string)))
+    ;; Undo everything, " bbb" must not be restored.
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa xxx" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))))
+
+(ert-deftest undo-fu-test-multi-step-redo-history-entry-count ()
+  "Verify redoing multiple steps at once removes an entry for each step.
+
+Write 3 words, undo 3 times, then redo all 3 at once via C-u 3.
+With `undo-fu-trim' enabled, the history entry count returns to 3
+\(as when redoing one step at a time, see `undo-fu-test-history-entry-count')."
+  (with-undo-fu-test-without-gc ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (should (equal 3 (undo-fu-test-count-history-entries)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))
+    (should (equal 6 (undo-fu-test-count-history-entries)))
+    ;; Redo 3 steps at once via C-u 3, each step removes an entry (trimmed).
+    (execute-kbd-macro (vconcat [?\C-u ?3] undo-fu-test-key-redo))
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    (should (equal 3 (undo-fu-test-count-history-entries)))))
+
 (ert-deftest undo-fu-test-trim-disabled-history-entry-count-grows ()
   "Check redo increases the history entry count with `undo-fu-trim' disabled.
 
