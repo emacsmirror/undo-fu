@@ -992,7 +992,8 @@ those 2 and stop at the original state."
 
 Edit the end then the start of the buffer, undo both, then narrow the buffer
 to exclude the start.  Redo 2 steps at once via C-u 2, the first step succeeds
-and the second fails, which is shown as a message instead of an error."
+and the second fails, which is shown as a message instead of an error.
+After widening, redo continues with the step which failed."
   (with-undo-fu-test "hello"
     (goto-char (point-max))
     (simulate-input
@@ -1011,10 +1012,23 @@ and the second fails, which is shown as a message instead of an error."
     (execute-kbd-macro (vconcat [?\C-u ?2] undo-fu-test-key-redo))
     (widen)
     (should (equal "helloX" (buffer-string)))
+    ;; The step redone is kept as a redo.
+    (should (undo-fu--was-undo-or-redo))
+    (should undo-fu--last-redo)
     (should
      (member
       "Changes to be undone are outside visible portion of buffer"
-      undo-fu-test--captured-messages))))
+      undo-fu-test--captured-messages))
+    ;; Redo the step which failed, then undo both steps.
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "YhelloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "helloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))))
 
 (ert-deftest undo-fu-test-multi-step-redo-partial-failure-within-step ()
   "Redo multiple steps where a later step fails part way, then undo.
@@ -1062,7 +1076,8 @@ Undo reverts the partially redone step instead of finishing it."
 
 Edit the end then the start of the buffer, undo both, then narrow the buffer
 to exclude the start.  Redo-all redoes the first step and raises the error
-of the second, without the message which would show all steps were redone."
+of the second, without the message which would show all steps were redone.
+After widening, redo continues with the step which failed."
   (with-undo-fu-test "hello"
     (goto-char (point-max))
     (simulate-input
@@ -1085,7 +1100,96 @@ of the second, without the message which would show all steps were redone."
       "Changes to be undone are outside visible portion of buffer")
     (widen)
     (should (equal "helloX" (buffer-string)))
-    (should-not (member "Redo All" undo-fu-test--captured-messages))))
+    ;; The step redone is kept as a redo.
+    (should (undo-fu--was-undo-or-redo))
+    (should undo-fu--last-redo)
+    (should-not (member "Redo All" undo-fu-test--captured-messages))
+    ;; Redo the step which failed, then undo both steps.
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "YhelloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "helloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))))
+
+(ert-deftest undo-fu-test-multi-step-redo-first-step-failure ()
+  "Redo multiple steps where the first step fails, keeping the undo state.
+
+Edit the end then the start of the buffer, undo both, then narrow the buffer
+to exclude the end.  Redo 2 steps at once via C-u 2, the first step fails,
+which is shown as a message instead of an error.
+As nothing was redone, the last action is still an undo,
+so unconstrained redo redoes it (instead of continuing the undo)."
+  (with-undo-fu-test "hello"
+    (goto-char (point-max))
+    (simulate-input
+      "X")
+    (goto-char (point-min))
+    (simulate-input
+      "Y")
+    (should (equal "YhelloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))
+    (narrow-to-region (point-min) (1- (point-max)))
+    (setq undo-fu-test--captured-messages nil)
+    (execute-kbd-macro (vconcat [?\C-u ?2] undo-fu-test-key-redo))
+    (widen)
+    (should (equal "hello" (buffer-string)))
+    (should
+     (member
+      "Changes to be undone are outside visible portion of buffer"
+      undo-fu-test--captured-messages))
+    ;; Nothing was redone, the last action is still an undo.
+    (should (undo-fu--was-undo-or-redo))
+    (should-not undo-fu--last-redo)
+    (simulate-input
+      undo-fu-test-key-disable-checkpoint)
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "helloX" (buffer-string)))))
+
+(ert-deftest undo-fu-test-redo-all-first-step-failure ()
+  "Redo-all where the first step fails, keeping the undo state.
+
+Edit the end then the start of the buffer, undo both, then narrow the buffer
+to exclude the end.  Redo-all raises the error of the first step.
+As nothing was redone, the last action is still an undo,
+so unconstrained redo redoes it (instead of continuing the undo)."
+  (with-undo-fu-test "hello"
+    (goto-char (point-max))
+    (simulate-input
+      "X")
+    (goto-char (point-min))
+    (simulate-input
+      "Y")
+    (should (equal "YhelloX" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "hello" (buffer-string)))
+    (narrow-to-region (point-min) (1- (point-max)))
+    (should-error-with-message
+        (simulate-input
+          undo-fu-test-key-redo-all)
+      'error
+      "Changes to be undone are outside visible portion of buffer")
+    (widen)
+    (should (equal "hello" (buffer-string)))
+    ;; Nothing was redone, the last action is still an undo.
+    (should (undo-fu--was-undo-or-redo))
+    (should-not undo-fu--last-redo)
+    (simulate-input
+      undo-fu-test-key-disable-checkpoint)
+    (simulate-input
+      undo-fu-test-key-redo)
+    (should (equal "helloX" (buffer-string)))))
 
 (ert-deftest undo-fu-test-redo-zero-steps ()
   "Redo zero steps via C-u 0, redoing nothing.

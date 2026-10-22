@@ -143,10 +143,16 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
       ;; the value is the position undo had reached in older history (used by `undo-only'
       ;; to skip changes which were already undone), not the next group in this list.
       ;; Removing entries found this way breaks `undo-only', so only remove this key.
-      (remhash ul undo-equiv-table))))
+      (remhash ul undo-equiv-table))
+    ;; Record the redo, so the steps redone are kept as a redo when a later step fails
+    ;; (in practice only when narrowing hides a change from `primitive-undo').
+    ;; `this-command' too, as the back-port sets it to `undo'.
+    (setq this-command 'undo-fu-only-redo)
+    (setq undo-fu--last-redo 'constrained)))
 
 (defun undo-fu--redo-steps (steps)
-  "Redo up to STEPS steps, stopping once the last change isn't an undo."
+  "Redo up to STEPS steps, stopping once the last change isn't an undo.
+Steps redone are recorded as a redo even when a later step fails."
   (declare (important-return-value nil))
   ;; Redo one step at a time, passing STEPS to `primitive-undo' would continue past
   ;; the undo steps, undoing (and discarding) the earlier history when STEPS is too large.
@@ -157,6 +163,8 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
       ;; so when a step fails part way, the changes it made would be added to
       ;; that group, causing the next undo to finish the redo instead of reverting it.
       ;; When the step succeeds, the boundary is removed with the changes it made.
+      ;; A step failing part way stays partially redone (as with `undo'),
+      ;; since rolling it back could fail the same way.
       (undo-boundary)
       (undo-fu--undo-redo)
       (setq count (1+ count)))))
@@ -342,9 +350,7 @@ to perform unconstrained undo/redo actions."
     (undo-fu--with-messages-as-non-repeating-list message-list
       (undo-fu--redo-steps most-positive-fixnum))
     (dolist (message-text message-list)
-      (message "%s All" message-text)))
-  (setq this-command 'undo-fu-only-redo)
-  (setq undo-fu--last-redo 'constrained))
+      (message "%s All" message-text))))
 
 ;; Uses Emacs 28's `undo-redo' (back-ported).
 ;;;###autoload
@@ -408,8 +414,7 @@ Optional argument ARG The number of steps to redo."
                   (progn
                     (cond
                      (undo-fu--respect
-                      (undo-fu--redo-steps steps)
-                      (setq undo-fu--last-redo 'constrained))
+                      (undo-fu--redo-steps steps))
                      (t
                       (undo-fu--undo-unconstrained steps)
                       (setq undo-fu--last-redo 'unconstrained)))
