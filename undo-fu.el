@@ -348,7 +348,8 @@ Optional argument ARG The number of steps to redo."
   (undo-fu--undo-enabled-or-error)
 
   ;; Assign `was-undo-or-redo', `was-redo' & `was-undo' for convenience.
-  (let* ((was-undo-or-redo (undo-fu--was-undo-or-redo))
+  (let* ((steps (or arg 1))
+         (was-undo-or-redo (undo-fu--was-undo-or-redo))
          (was-redo (and was-undo-or-redo undo-fu--was-redo))
          (was-undo (and was-undo-or-redo (null was-redo))))
 
@@ -360,8 +361,7 @@ Optional argument ARG The number of steps to redo."
                     (substitute-command-keys
                      (format "\\[%s]" (symbol-name (undo-fu--quit-command)))))))
 
-    (let* ((steps (or arg 1))
-           (last-command
+    (let* ((last-command
             (cond
              (was-undo
               ;; Break undo chain, avoid having to press [keyboard-quit].
@@ -411,15 +411,15 @@ Optional argument ARG the number of steps to undo."
   (undo-fu--undo-enabled-or-error)
 
   ;; Assign `was-undo-or-redo' & `was-redo' for convenience.
-  (let* ((was-undo-or-redo (undo-fu--was-undo-or-redo))
+  (let* ((steps (or arg 1))
+         (was-undo-or-redo (undo-fu--was-undo-or-redo))
          (was-redo (and was-undo-or-redo undo-fu--was-redo)))
 
     (undo-fu--checkpoint-update was-undo-or-redo "Undo checkpoint ignored!")
 
-    (let* ((steps (or arg 1))
-           ;; Swap in 'undo' for our own function name.
-           ;; Without this undo won't stop once the first undo step is reached.
-           (last-command
+    ;; Swap in 'undo' for our own function name.
+    ;; Without this undo won't stop once the first undo step is reached.
+    (let* ((last-command
             (cond
              ;; Special case, to avoid being locked out of the undo-redo chain.
              ;; Without this, continuously redoing will end up in a state where undo & redo fails.
