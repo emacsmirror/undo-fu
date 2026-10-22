@@ -178,6 +178,41 @@ This resets the checkpoint after running non-undo related commands."
       (setq undo-fu--in-region nil))
     (setq undo-fu--respect t)))
 
+(defun undo-fu--quit-command ()
+  "Return the command used to step over the checkpoint.
+See: `undo-fu-ignore-keyboard-quit'."
+  (declare (important-return-value t))
+  (cond
+   (undo-fu-ignore-keyboard-quit
+    'undo-fu-disable-checkpoint)
+   (t
+    'keyboard-quit)))
+
+(defun undo-fu--checkpoint-update (was-undo-or-redo step-over-message)
+  "Update the checkpoint & region before undo/redo.
+WAS-UNDO-OR-REDO is the result of `undo-fu--was-undo-or-redo'.
+Show STEP-OVER-MESSAGE when the checkpoint is stepped over."
+  (declare (important-return-value nil))
+  (undo-fu--checkpoint-reset-when-stale was-undo-or-redo)
+
+  (when (region-active-p)
+    (cond
+     (undo-fu-allow-undo-in-region
+      (message "Undo in region in use. Undo checkpoint ignored!")
+      (undo-fu--checkpoint-disable)
+      (setq undo-fu--in-region t))
+     ;; Default behavior, just remove selection.
+     (t
+      (deactivate-mark))))
+
+  ;; Allow crossing the boundary, if we press [keyboard-quit].
+  ;; This allows explicitly over-stepping the boundary,
+  ;; in cases when users want to bypass this constraint.
+  (when undo-fu--respect
+    (when (memq last-command (list (undo-fu--quit-command) 'undo-fu-disable-checkpoint))
+      (undo-fu--checkpoint-disable)
+      (message "%s" step-over-message))))
+
 (defmacro undo-fu--with-advice (advice &rest body)
   "Execute BODY with ADVICE temporarily enabled.
 
@@ -315,39 +350,15 @@ Optional argument ARG The number of steps to redo."
   ;; Assign `was-undo-or-redo', `was-redo' & `was-undo' for convenience.
   (let* ((was-undo-or-redo (undo-fu--was-undo-or-redo))
          (was-redo (and was-undo-or-redo undo-fu--was-redo))
-         (was-undo (and was-undo-or-redo (null was-redo)))
-         (undo-fu-quit-command
-          (cond
-           (undo-fu-ignore-keyboard-quit
-            'undo-fu-disable-checkpoint)
-           (t
-            'keyboard-quit))))
+         (was-undo (and was-undo-or-redo (null was-redo))))
 
-    (undo-fu--checkpoint-reset-when-stale was-undo-or-redo)
-
-    (when (region-active-p)
-      (cond
-       (undo-fu-allow-undo-in-region
-        (message "Undo in region in use. Undo checkpoint ignored!")
-        (undo-fu--checkpoint-disable)
-        (setq undo-fu--in-region t))
-       ;; Default behavior, just remove selection.
-       (t
-        (deactivate-mark))))
-
-    ;; Allow crossing the boundary, if we press [keyboard-quit].
-    ;; This allows explicitly over-stepping the boundary,
-    ;; in cases when users want to bypass this constraint.
-    (when undo-fu--respect
-      (when (memq last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
-        (undo-fu--checkpoint-disable)
-        (message "Redo checkpoint stepped over!")))
+    (undo-fu--checkpoint-update was-undo-or-redo "Redo checkpoint stepped over!")
 
     (when undo-fu--respect
       (when (null was-undo-or-redo)
         (user-error "Redo without undo step (%s to ignore)"
                     (substitute-command-keys
-                     (format "\\[%s]" (symbol-name undo-fu-quit-command))))))
+                     (format "\\[%s]" (symbol-name (undo-fu--quit-command)))))))
 
     (let* ((steps (or arg 1))
            (last-command
@@ -401,33 +412,9 @@ Optional argument ARG the number of steps to undo."
 
   ;; Assign `was-undo-or-redo' & `was-redo' for convenience.
   (let* ((was-undo-or-redo (undo-fu--was-undo-or-redo))
-         (was-redo (and was-undo-or-redo undo-fu--was-redo))
-         (undo-fu-quit-command
-          (cond
-           (undo-fu-ignore-keyboard-quit
-            'undo-fu-disable-checkpoint)
-           (t
-            'keyboard-quit))))
+         (was-redo (and was-undo-or-redo undo-fu--was-redo)))
 
-    (undo-fu--checkpoint-reset-when-stale was-undo-or-redo)
-
-    (when (region-active-p)
-      (cond
-       (undo-fu-allow-undo-in-region
-        (message "Undo in region in use. Undo checkpoint ignored!")
-        (undo-fu--checkpoint-disable)
-        (setq undo-fu--in-region t))
-       ;; Default behavior, just remove selection.
-       (t
-        (deactivate-mark))))
-
-    ;; Allow crossing the boundary, if we press [keyboard-quit].
-    ;; This allows explicitly over-stepping the boundary,
-    ;; in cases when users want to bypass this constraint.
-    (when undo-fu--respect
-      (when (memq last-command (list undo-fu-quit-command 'undo-fu-disable-checkpoint))
-        (undo-fu--checkpoint-disable)
-        (message "Undo checkpoint ignored!")))
+    (undo-fu--checkpoint-update was-undo-or-redo "Undo checkpoint ignored!")
 
     (let* ((steps (or arg 1))
            ;; Swap in 'undo' for our own function name.
