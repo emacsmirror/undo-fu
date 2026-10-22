@@ -354,9 +354,8 @@ Optional argument ARG The number of steps to redo."
       ;; (otherwise unconstrained undo would reverse after redoing nothing).
       ;; NOTE: this follows `undo-fu--checkpoint-update' so [keyboard-quit] steps over
       ;; the checkpoint & the region is deactivated, as with any other count.
-      ;; `undo-fu--backport-undo-redo-with-trim' & `undo' aren't called, as they would
-      ;; show a "Redo" message although nothing is redone, and may replace
-      ;; `pending-undo-list' & `buffer-undo-list'.
+      ;; `undo' isn't called (when unconstrained), as it would show a message
+      ;; although nothing is redone, and may replace `pending-undo-list' & `buffer-undo-list'.
       t)
      (t
       (when undo-fu--respect
