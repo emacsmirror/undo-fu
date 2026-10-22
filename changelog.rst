@@ -15,6 +15,8 @@ Change Log
     undoing the change just redone instead of redoing the next.
   - Fix undo after redo running in region (and redo showing "Redo in region")
     after undoing in region in another buffer, with ``undo-fu-allow-undo-in-region``.
+  - Fix redo undoing the last change after the built-in ``undo`` with a count of zero (``C-u 0``),
+    removing it from the undo history (Emacs 28 and newer).
 
 - Version 0.5 (2022-07-10)
 

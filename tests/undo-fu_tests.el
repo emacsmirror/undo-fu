@@ -95,6 +95,8 @@ Messages are stored in `undo-fu-test--captured-messages'."
   "Key binding used for `undo-fu-only-redo-all' in tests.")
 (defconst undo-fu-test-key-keyboard-quit [f10]
   "Key binding used for `undo-fu-test--keyboard-quit' in tests.")
+(defconst undo-fu-test-key-builtin-undo [?\C-/]
+  "Key binding used for the built-in `undo' in tests.")
 
 (defun undo-fu-test--keyboard-quit ()
   "Stand in for `keyboard-quit' in keyboard macros.
@@ -109,6 +111,7 @@ so only set `this-command', seen as `last-command' by the next command in the ma
 (global-set-key undo-fu-test-key-disable-checkpoint 'undo-fu-disable-checkpoint)
 (global-set-key undo-fu-test-key-redo-all 'undo-fu-only-redo-all)
 (global-set-key undo-fu-test-key-keyboard-quit 'undo-fu-test--keyboard-quit)
+(global-set-key undo-fu-test-key-builtin-undo 'undo)
 
 (defmacro simulate-input (&rest keys)
   "Helper macro to simulate input using KEYS."
@@ -1535,6 +1538,87 @@ is set), this must also apply when nothing is undone or redone."
       (simulate-input
         undo-fu-test-key-redo)
       (should (equal "aaa bbb" (buffer-string))))))
+
+(ert-deftest undo-fu-test-redo-after-builtin-undo-zero-steps ()
+  "Redo after the built-in `undo' undoes zero steps via C-u 0.
+
+Write 3 words, then undo 0 steps with `undo', which maps \" ccc\" to \\='empty
+in `undo-equiv-table' (so the next undo continues the undo chain).
+Redo must not treat \" ccc\" as an undo step (undoing it and removing it from
+the undo history)."
+  ;; Redo after undo, stopping at the initial undo step.
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-builtin-undo))
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))
+    (execute-kbd-macro (vconcat [?\C-u ?5] undo-fu-test-key-redo))
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    ;; Undo continues from " ccc".
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-redo-all)
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string))))
+
+  ;; Redo without undo, there is nothing to redo.
+  (with-undo-fu-test ""
+    (simulate-input
+      "aaa")
+    (simulate-input
+      " bbb")
+    (simulate-input
+      " ccc")
+    (execute-kbd-macro (vconcat [?\C-u ?0] undo-fu-test-key-builtin-undo))
+    (should-error-with-message
+        (simulate-input
+          undo-fu-test-key-redo)
+      'user-error
+      "Redo without undo step (C-g to ignore)")
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-redo-all)
+    (should (equal "aaa bbb ccc" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "aaa bbb" (buffer-string)))))
+
+(ert-deftest undo-fu-test-undo-consecutive-boundaries ()
+  "Undo with consecutive boundaries at the head of the undo list.
+
+Undoing over the extra boundary undoes nothing, so `undo' maps the last change
+to \\='empty in `undo-equiv-table' (so the next undo continues the undo chain).
+Undo must continue the chain, otherwise each undo restarts it,
+only undoing the boundaries without reaching the earlier changes."
+  (with-undo-fu-test ""
+    (simulate-input
+      "one")
+    (simulate-input
+      " two")
+    ;; Add two boundaries, `undo-boundary' doesn't add a boundary when one is at the head.
+    (push nil buffer-undo-list)
+    (push nil buffer-undo-list)
+    (should (equal "one two" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "one two" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "one" (buffer-string)))
+    (simulate-input
+      undo-fu-test-key-undo)
+    (should (equal "" (buffer-string)))))
 
 ;; Local Variables:
 ;; fill-column: 99

@@ -135,6 +135,11 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
     ;; the next undo continuing the chain inherits it, running in region.
     (setq undo-in-region nil)
     (undo-fu--backport-undo-redo 1)
+    ;; NOTE: `undo' can't continue from 'empty (see `undo-fu--last-change-can-redo-p'),
+    ;; it only maps a change to 'empty when `pending-undo-list' is the change, so use that.
+    ;; `undo-redo' has this bug, handled here to keep the back-port unchanged.
+    (when (eq pending-undo-list 'empty)
+      (setq pending-undo-list (undo-fu--undo-list-skip-boundaries buffer-undo-list)))
     (when undo-fu-trim
       ;; Remove the entry of the group consumed by redo so undo+redo cancels out.
       ;; As only one group is redone, this is the only key it could contain.
@@ -157,7 +162,7 @@ Steps redone are recorded as a redo even when a later step fails."
   ;; Redo one step at a time, passing STEPS to `primitive-undo' would continue past
   ;; the undo steps, undoing (and discarding) the earlier history when STEPS is too large.
   (let ((count 0))
-    (while (and (< count steps) (undo-fu--was-undo-or-redo))
+    (while (and (< count steps) (undo-fu--last-change-can-redo-p))
       ;; Separate the changes made by this step from the group being redone.
       ;; NOTE: after a step, `buffer-undo-list' starts with the next group's changes,
       ;; so when a step fails part way, the changes it made would be added to
@@ -315,6 +320,16 @@ Optional argument BODY runs with the message suffix."
    (t
     nil)))
 
+(defun undo-fu--last-change-can-redo-p ()
+  "Return t when the last change is an undo step which can be redone."
+  (declare (important-return-value t))
+  ;; NOTE: `undo' maps a change to 'empty when it undoes nothing (a count of zero or
+  ;; consecutive boundaries), continuing the undo chain over it, so only redo checks this:
+  ;; the change isn't an undo, redoing it would undo it, removing it from the history.
+  ;; Emacs 27 and older map it to t, so it can't be detected there.
+  (let ((equiv (undo-fu--backport-undo--last-change-was-undo-p buffer-undo-list)))
+    (and equiv (not (eq equiv 'empty)))))
+
 ;; ---------------------------------------------------------------------------
 ;; Public Functions
 
@@ -382,7 +397,7 @@ Optional argument ARG The number of steps to redo."
       t)
      (t
       (when undo-fu--respect
-        (when (null was-undo-or-redo)
+        (when (null (undo-fu--last-change-can-redo-p))
           (user-error "Redo without undo step (%s to ignore)"
                       (substitute-command-keys
                        (format "\\[%s]" (symbol-name (undo-fu--quit-command)))))))
@@ -451,9 +466,8 @@ Optional argument ARG the number of steps to undo."
       ;; (otherwise unconstrained redo would reverse after undoing nothing).
       ;; NOTE: this follows `undo-fu--checkpoint-update' so [keyboard-quit] steps over
       ;; the checkpoint & the region is deactivated, as with any other count.
-      ;; `undo-only' & `undo' aren't called, as they would show an "Undo" message
-      ;; and add an `undo-equiv-table' entry for the last change (as if it were an undo),
-      ;; causing a redo to undo the last change, removing it from history.
+      ;; `undo' isn't called, as it would show an "Undo" message and map the last change
+      ;; to 'empty in `undo-equiv-table' (see: `undo-fu--last-change-can-redo-p').
       t)
      (t
       ;; Swap in 'undo' for our own function name.
