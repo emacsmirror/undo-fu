@@ -122,6 +122,11 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
   (declare (important-return-value nil))
   ;; The equiv-table key (as used by `undo-fu--backport-undo-redo').
   (let ((ul (undo-fu--undo-list-skip-boundaries buffer-undo-list)))
+    ;; Redo never runs in region, clear the value left by the last undo (in any buffer)
+    ;; as `undo' does when restarting the chain.
+    ;; NOTE: the back-port only reads this for its "Redo in region" message, however
+    ;; the next undo continuing the chain inherits it, running in region.
+    (setq undo-in-region nil)
     (undo-fu--backport-undo-redo 1)
     (when undo-fu-trim
       ;; Remove the entry of the group consumed by redo so undo+redo cancels out.

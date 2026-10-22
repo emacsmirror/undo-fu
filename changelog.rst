@@ -13,6 +13,8 @@ Change Log
     discarding the earlier undo history.
   - Fix unconstrained redo (``C-g`` then redo) after a constrained redo
     undoing the change just redone instead of redoing the next.
+  - Fix undo after redo running in region (and redo showing "Redo in region")
+    after undoing in region in another buffer, with ``undo-fu-allow-undo-in-region``.
 
 - Version 0.5 (2022-07-10)
 

@@ -194,6 +194,56 @@ as garbage collection removes the entries it counts."
      (with-undo-fu-test ,initial-buffer-text
        ,@body)))
 
+(defmacro with-undo-fu-test-other-buffer (vars &rest body)
+  "Run BODY with VARS, a list of symbols (BUF BUF-OTHER), bound to buffers.
+BUF is the current buffer, BUF-OTHER is a new buffer,
+killed after BODY runs (switching back to BUF)."
+  (declare (indent 1))
+  (let ((buf (nth 0 vars))
+        (buf-other (nth 1 vars)))
+    `(let ((,buf (current-buffer))
+           (,buf-other (generate-new-buffer "untitled-other")))
+       (unwind-protect
+           (progn
+             ,@body)
+         (switch-to-buffer ,buf)
+         (kill-buffer ,buf-other)))))
+
+(defmacro with-undo-fu-test-undo-in-region (&rest body)
+  "Run BODY with `undo-fu-allow-undo-in-region' enabled.
+Also enable `transient-mark-mode' (off in batch mode), needed for `region-active-p'."
+  (declare (indent 0))
+  `(let ((undo-fu-allow-undo-in-region t)
+         (transient-mark-mode t))
+     ,@body))
+
+(defun undo-fu-test--select-all ()
+  "Select the whole buffer, activating the region.
+As `mark-whole-buffer' does, which is only intended for interactive use."
+  (push-mark (point-min) nil t)
+  (goto-char (point-max)))
+
+(defun undo-fu-test--undo-in-other-buffer-impl (buf-other key in-region words)
+  "Write WORDS in BUF-OTHER & undo the last using KEY, in region when IN-REGION is non-nil.
+This replaces `pending-undo-list'.  Switch back to the current buffer afterwards."
+  (let ((buf (current-buffer)))
+    (switch-to-buffer buf-other)
+    (buffer-reset-text "")
+    (dolist (word words)
+      (simulate-input
+        word))
+    (when in-region
+      (undo-fu-test--select-all))
+    (simulate-input
+      key)
+    (should (equal (apply #'concat (butlast words)) (buffer-string)))
+    (switch-to-buffer buf)))
+
+(defun undo-fu-test--undo-in-region-in-other-buffer (buf-other &rest words)
+  "Write WORDS in BUF-OTHER & undo the last in region, setting `undo-in-region'.
+Use with `with-undo-fu-test-undo-in-region'.  Switch back to the current buffer afterwards."
+  (undo-fu-test--undo-in-other-buffer-impl buf-other undo-fu-test-key-undo t words))
+
 ;; Suppress bell during tests.
 (setq ring-bell-function #'ignore)
 
@@ -1114,6 +1164,62 @@ redo steps are unconstrained, continuing past the initial undo step."
     (simulate-input
       undo-fu-test-key-redo)
     (should (equal "aaa bbb" (buffer-string)))))
+
+(ert-deftest undo-fu-test-redo-other-buffer-undo-in-region-message ()
+  "Redo after undoing in region in another buffer, without showing \"Redo in region\".
+
+Undo in one buffer, then undo in region in another buffer and switch back.
+Redo never runs in region, so the global `undo-in-region' left by the other buffer
+must not be shown."
+  (with-undo-fu-test-undo-in-region
+    (with-undo-fu-test ""
+      (with-undo-fu-test-other-buffer (buf buf-other)
+        (simulate-input
+          "aaa")
+        (simulate-input
+          " bbb")
+        (simulate-input
+          undo-fu-test-key-undo)
+        (should (equal "aaa" (buffer-string)))
+
+        (undo-fu-test--undo-in-region-in-other-buffer buf-other "1" " 2")
+        (setq undo-fu-test--captured-messages nil)
+        (simulate-input
+          undo-fu-test-key-redo)
+        (should (equal "aaa bbb" (buffer-string)))
+        (should (member "Redo" undo-fu-test--captured-messages))
+        (should-not (member "Redo in region" undo-fu-test--captured-messages))))))
+
+(ert-deftest undo-fu-test-undo-after-redo-other-buffer-undo-in-region ()
+  "Undo after redoing, following an undo in region in another buffer, not in region.
+
+Undo twice, then undo in region in another buffer and switch back.
+Redo one step, then undo: redo records `undo-in-region' for the next undo,
+so it must clear the value left by the other buffer, otherwise undo runs in region."
+  (with-undo-fu-test-undo-in-region
+    (with-undo-fu-test ""
+      (with-undo-fu-test-other-buffer (buf buf-other)
+        (simulate-input
+          "aaa")
+        (simulate-input
+          " bbb")
+        (simulate-input
+          " ccc")
+        (simulate-input
+          undo-fu-test-key-undo
+          undo-fu-test-key-undo)
+        (should (equal "aaa" (buffer-string)))
+
+        (undo-fu-test--undo-in-region-in-other-buffer buf-other "1" " 2")
+        (simulate-input
+          undo-fu-test-key-redo)
+        (should (equal "aaa bbb" (buffer-string)))
+        (setq undo-fu-test--captured-messages nil)
+        (simulate-input
+          undo-fu-test-key-undo)
+        (should (equal "aaa" (buffer-string)))
+        (should (member "Undo" undo-fu-test--captured-messages))
+        (should-not (member "Undo in region" undo-fu-test--captured-messages))))))
 
 (ert-deftest undo-fu-test-unconstrained-redo-after-redo ()
   "Unconstrained redo after a constrained redo, continuing the redo.
