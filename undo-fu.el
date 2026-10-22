@@ -79,15 +79,11 @@ causing the number of steps to grow even though the buffer content is unchanged.
   '(undo-fu-only-undo undo-fu-only-redo-all undo-fu-only-redo undo-fu-disable-checkpoint))
 
 ;; ---------------------------------------------------------------------------
-;; Back Port `undo-redo'
-;; Emacs 28's `undo-redo' back-ported into undo-fu.
-
-(defun undo-fu--undo-list-skip-boundaries (undo-list)
-  "Return UNDO-LIST without its leading boundaries (nil elements)."
-  (declare (important-return-value t))
-  (while (and (consp undo-list) (null (car undo-list)))
-    (setq undo-list (cdr undo-list)))
-  undo-list)
+;; Back-Ported Code
+;;
+;; `undo-redo' & `undo--last-change-was-undo-p' from Emacs 28, for older versions.
+;; WARNING: don't change this unless absolutely needed,
+;; keep it matching Emacs so it can be compared with the original.
 
 (defun undo-fu--backport-undo--last-change-was-undo-p (undo-list)
   "Return the last changed undo state for UNDO-LIST, or nil if none.
@@ -117,8 +113,19 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
       (setq pending-undo-list new-pul)
       (setq buffer-undo-list new-ul)))))
 
-(defun undo-fu--backport-undo-redo-with-trim ()
-  "Redo a single step, trimming `undo-equiv-table' when enabled."
+
+;; ---------------------------------------------------------------------------
+;; Internal Functions/Macros
+
+(defun undo-fu--undo-list-skip-boundaries (undo-list)
+  "Return UNDO-LIST without its leading boundaries (nil elements)."
+  (declare (important-return-value t))
+  (while (and (consp undo-list) (null (car undo-list)))
+    (setq undo-list (cdr undo-list)))
+  undo-list)
+
+(defun undo-fu--undo-redo ()
+  "Redo a single step, wrapping `undo-fu--backport-undo-redo'."
   (declare (important-return-value nil))
   ;; The equiv-table key (as used by `undo-fu--backport-undo-redo').
   (let ((ul (undo-fu--undo-list-skip-boundaries buffer-undo-list)))
@@ -138,10 +145,6 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
       ;; Removing entries found this way breaks `undo-only', so only remove this key.
       (remhash ul undo-equiv-table))))
 
-
-;; ---------------------------------------------------------------------------
-;; Internal Functions/Macros
-
 (defun undo-fu--redo-steps (steps)
   "Redo up to STEPS steps, stopping once the last change isn't an undo."
   (declare (important-return-value nil))
@@ -155,7 +158,7 @@ This checks if UNDO-LIST represents a state that resulted from an undo."
       ;; that group, causing the next undo to finish the redo instead of reverting it.
       ;; When the step succeeds, the boundary is removed with the changes it made.
       (undo-boundary)
-      (undo-fu--backport-undo-redo-with-trim)
+      (undo-fu--undo-redo)
       (setq count (1+ count)))))
 
 (defun undo-fu--checkpoint-disable ()
